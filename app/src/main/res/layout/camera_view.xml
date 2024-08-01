@@ -16,12 +16,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:background="@android:color/holo_green_light"
         android:layout_weight="1">
-<!--        <com.hamal.egg.MjpegView-->
-<!--            android:id="@+id/cam_1"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintStart_toStartOf="parent"/>-->
+        <com.hamal.egg.MjpegView
+            android:id="@+id/cam_1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
     </FrameLayout>
     <FrameLayout
         android:id="@+id/box_2"
@@ -35,12 +35,12 @@
         android:layout_weight="1"
         android:background="@android:color/holo_red_light">
 
-<!--        <com.hamal.egg.MjpegView-->
-<!--            android:id="@+id/cam_2"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintStart_toStartOf="parent"/>-->
+        <com.hamal.egg.MjpegView
+            android:id="@+id/cam_2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
     </FrameLayout>
     <FrameLayout
         android:id="@+id/box_3"
@@ -54,12 +54,12 @@
         android:background="@android:color/holo_blue_bright"
         android:layout_weight="1">
 
-<!--        <com.hamal.egg.MjpegView-->
-<!--            android:id="@+id/cam_3"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintStart_toStartOf="parent"/>-->
+        <com.hamal.egg.MjpegView
+            android:id="@+id/cam_3"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

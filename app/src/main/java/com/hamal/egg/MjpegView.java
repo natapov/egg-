@@ -45,6 +45,7 @@ public class MjpegView extends SurfaceView{
     Bitmap bm;
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
+    Exception last_thread_exception = null;
     private Context mContext;
     private String url = null;
 
@@ -66,7 +67,6 @@ public class MjpegView extends SurfaceView{
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                startPlayback("http://192.168.192.220:8008/stream.mjpg");
             }
 
             @Override
@@ -108,11 +108,14 @@ public class MjpegView extends SurfaceView{
         try {
             connection = (HttpURLConnection) new URL(this.url).openConnection();
             connection.setDoInput(true);
-//            connection.setConnectTimeout(1000);
-//            connection.setReadTimeout(1000);
+            connection.setConnectTimeout(300);
+            connection.setReadTimeout(300);
             connection.connect();
             bis = new DataInputStream(connection.getInputStream());
-            read_until_sequence(headerBuffer, bis, SOI_MARKER);
+            int res = read_until_sequence(headerBuffer, bis, SOI_MARKER);
+            if(res == -1) {
+                return -1;
+            }
             int contentLength = parseContentLength(headerBuffer);
 
             bis.readFully(frameBuffer,0, contentLength);
@@ -128,9 +131,9 @@ public class MjpegView extends SurfaceView{
         }
     }
     private Rect destRect(int bmw, int bmh) {
-        int tempx = (getWidth() / 2) - (bmw / 2);
-        int tempy = (getHeight() / 2) - (bmh / 2);
-        return new Rect(tempx, tempy, bmw + tempx, bmh + tempy);
+        int x = (getWidth() / 2) - (bmw / 2);
+        int y = (getHeight() / 2) - (bmh / 2);
+        return new Rect(x, y, bmw + x, bmh + y);
     }
     public void run_loop() throws IOException {
         boolean first_frame = true;
@@ -139,6 +142,9 @@ public class MjpegView extends SurfaceView{
             try {
                 canvas = null;
                 int bytesRead = read_frame();
+                if(bytesRead < 0){
+                    continue;
+                }
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
                 if(first_frame){
                     dest_rect = destRect(bm.getWidth(), bm.getHeight());
@@ -160,23 +166,19 @@ public class MjpegView extends SurfaceView{
         }
     }
     public void connect() {
-        Exception last_exception = null;
-
-        for(int i = 0; i < 1000; i++) {
+        for(int i = 0; i < 100; i++) {
             startTether(); // check that tethering is on
             try {
                 run_loop();
             }
             catch (Exception e){
-                last_exception = e;
-                Log.e("Draw loop: " + thread.getName(), "Restarting, got exception: " + Arrays.toString(e.getStackTrace()));
-                continue;
-                // try again
+                last_thread_exception = e;
+                Log.e("Restarting draw loop", "got exception: " + Arrays.toString(e.getStackTrace()));
+                continue; // try again
             }
-            last_exception = null;
+            last_thread_exception = null;
             break;
         }
-        // todo we what now?
     }
 
     public void startPlayback(String url) {
@@ -184,15 +186,15 @@ public class MjpegView extends SurfaceView{
         thread = new Thread(this::connect);
         is_run = true;
         thread.start();
+        if (last_thread_exception != null) {
+            Log.e("Too many restarts", "Got exception: " + Arrays.toString(last_thread_exception.getStackTrace()));
+        }
     }
 
     public void stopPlayback()  {
         is_run = false;
         if (thread != null) {
-            try {
-                thread.join(0);
-            } catch (InterruptedException ignored) {
-            }
+            thread.interrupt();
             thread = null;
         }
     }
