@@ -110,7 +110,7 @@ public class MjpegView extends SurfaceView{
         try {
             connection = (HttpURLConnection) new URL(this.url).openConnection();
             connection.setDoInput(true);
-            connection.setConnectTimeout(30);
+            connection.setConnectTimeout(300);
             connection.setReadTimeout(300);
             connection.connect();
             bis = new DataInputStream(connection.getInputStream());
@@ -130,8 +130,8 @@ public class MjpegView extends SurfaceView{
         }
     }
     private Rect destRect(int bmw, int bmh) {
-        int x = (getWidth() / 2) - (bmw / 2);
-        int y = (getHeight() / 2) - (bmh / 2);
+        final int x = (getWidth() / 2) - (bmw / 2);
+        final int y = (getHeight() / 2) - (bmh / 2);
         return new Rect(x, y, bmw + x, bmh + y);
     }
     public void run_loop() throws IOException {
