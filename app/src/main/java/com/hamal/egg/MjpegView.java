@@ -1,6 +1,7 @@
 package com.hamal.egg;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,61 +12,66 @@ import android.graphics.Rect;
 //import android.net.TetheringManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
+//import org.bytedeco.javacv.*;
+//import org.bytedeco.opencv.opencv_core.*;
+//import org.bytedeco.opencv.opencv_imgproc.*;
+//import org.bytedeco.opencv.opencv_calib3d.*;
+//import org.bytedeco.opencv.opencv_objdetect.*;
+//import static org.bytedeco.opencv.global.opencv_core.*;
+//import static org.bytedeco.opencv.global.opencv_imgproc.*;
+//import static org.bytedeco.opencv.global.opencv_calib3d.*;
+//import static org.bytedeco.opencv.global.opencv_objdetect.*;
 
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
 
-
 public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 100;
+
+    final static int stroke_width = 4;
+    final static int frame_offset = stroke_width/2;
     private final static int FRAME_MAX_LENGTH = 150000;
     private static final Object tethering_lock = new Object();
-
-
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
     public byte[] frameBuffer = new byte[FRAME_MAX_LENGTH];
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     private final String CONTENT_LENGTH = "Content-Length: ";
-    private File last_frame;
     Thread thread = null;
     boolean is_run = false;
+    boolean is_recording = false;
     ContentResolver mResolver;
-    Uri mUri;
     Rect dest_rect = null;
     Bitmap bm;
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
+    Uri mUri;
     private Context mContext;
     private String url = null;
-
-    public MjpegView(Context context, AttributeSet attrs) {
+    // FFmpegFrameRecorder recorder = null;
+    public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
         mContext = context;
         mResolver = mContext.getContentResolver();
-
 //        ContentValues contentValues = new ContentValues();
-//        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "last_frame");
-//        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-//        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
-//        mUri = mResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-//
-//        last_frame = new File(mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "last_frame.jpg");
+//        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "recording.mjpeg");
+//        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
+//        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+//        mUri = mResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
         options.inMutable = true;
         holder = this.getHolder();
-
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -77,6 +83,9 @@ public class MjpegView extends SurfaceView{
             }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                try {
+                    //stopRecording();
+                }catch (Exception ignored){}
                 stopPlayback();
             }
         });
@@ -99,13 +108,8 @@ public class MjpegView extends SurfaceView{
         }
         throw new IOException("Bad packet format");
     }
-    public void record_frame(){
-        try (OutputStream outputStream = mResolver.openOutputStream(mUri)) {
-            outputStream.write(frameBuffer);
-        }catch (Exception e){}
-    }
     public int read_frame() throws IOException {
-        DataInputStream bis = null;
+        DataInputStream data_input = null;
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL(this.url).openConnection();
@@ -113,17 +117,17 @@ public class MjpegView extends SurfaceView{
             connection.setConnectTimeout(300);
             connection.setReadTimeout(300);
             connection.connect();
-            bis = new DataInputStream(connection.getInputStream());
-            read_until_sequence(headerBuffer, bis, SOI_MARKER);
+            data_input = new DataInputStream(connection.getInputStream());
+            read_until_sequence(headerBuffer, data_input, SOI_MARKER);
             int contentLength = parseContentLength(headerBuffer);
 
-            bis.readFully(frameBuffer,0, contentLength);
+            data_input.readFully(frameBuffer,0, contentLength);
             // record_frame();
             return contentLength;
         }
         finally {
-            if (bis != null) try {
-                bis.close();
+            if (data_input != null) try {
+                data_input.close();
             } catch (IOException e) {
             }
             if (connection != null) connection.disconnect();
@@ -140,8 +144,6 @@ public class MjpegView extends SurfaceView{
         int allowed_failed_frames = 100;
         Paint frame_paint = new Paint();
         frame_paint.setStyle(Paint.Style.STROKE);
-        final int stroke_width = 4;
-        final int frame_offset = stroke_width/2;
         frame_paint.setStrokeWidth(stroke_width);
         boolean read_success = false;
         while(is_run){
@@ -159,9 +161,7 @@ public class MjpegView extends SurfaceView{
                     throw e;
                 }
             }
-            try {
-                canvas = holder.lockCanvas();
-            } catch (Exception ignored){}
+            canvas = holder.lockCanvas();
             if (canvas == null) {
                 Log.w("draw thread", "null canvas, skipping render");
                 continue;
@@ -183,8 +183,30 @@ public class MjpegView extends SurfaceView{
             canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
             assert(canvas != null);
             holder.unlockCanvasAndPost(canvas);
+            if (is_recording) {
+//                if(recorder == null) {
+//                    startRecording();
+//                }
+//                recorder.recordImage(bm.getWidth(), bm.getWidth(), 8, 4, bm.getWidth() * 4, org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
+            }
         }
     }
+//    public void startRecording() throws FFmpegFrameRecorder.Exception {
+//        recorder = new FFmpegFrameRecorder("recording.avi", bm.getWidth(), bm.getWidth());
+//        recorder.setVideoCodec(org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
+//        recorder.setFormat("avi");
+//        recorder.setFrameRate(8); //  todo add current frame rate variable
+//        recorder.start();
+//        is_recording = true;
+//    }
+//    public void stopRecording() throws FFmpegFrameRecorder.Exception {
+//        if(recorder != null) {
+//            recorder.stop();
+//            recorder = null;
+//
+//        }
+//        is_recording = false;
+//    }
     public void connect() {
         for(int i = 0;; i++) {
             startTether(); // check that tethering is on

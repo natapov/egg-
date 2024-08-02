@@ -9,7 +9,6 @@ import androidx.navigation.ui.NavigationUI;
 import com.hamal.egg.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
-
     private ActivityMainBinding binding;
 
     @Override

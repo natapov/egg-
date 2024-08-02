@@ -3,14 +3,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-
 import com.hamal.egg.databinding.CameraViewBinding;
 
 public class DashboardFragment extends Fragment {
-
     private CameraViewBinding binding;
 
     @Override
@@ -33,5 +30,4 @@ public class DashboardFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
-
 }

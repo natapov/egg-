@@ -32,7 +32,6 @@ android {
 }
 
 dependencies {
-
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout
@@ -40,6 +39,14 @@ dependencies {
     implementation libs.lifecycle.viewmodel.ktx
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
+//    implementation files('libs/javacv.jar')
+//    implementation files('libs/javacv-platform.jar')
+////    implementation files('libs/opencv-android-arm64.jar')
+//    implementation files('libs/javacpp-android-arm64.jar')
+//    implementation files('libs/ffmpeg-android-arm64-gpl.jar')
+////    implementation files('libs/opencv.jar')
+//    implementation files('libs/ffmpeg.jar')
+//    implementation files('libs/javacpp.jar')
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
