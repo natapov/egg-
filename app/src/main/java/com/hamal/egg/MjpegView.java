@@ -20,7 +20,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
-//import org.bytedeco.javacv.*;
+import org.bytedeco.javacv.*;
 //import org.bytedeco.opencv.opencv_core.*;
 //import org.bytedeco.opencv.opencv_imgproc.*;
 //import org.bytedeco.opencv.opencv_calib3d.*;
@@ -31,8 +31,10 @@ import androidx.annotation.NonNull;
 //import static org.bytedeco.opencv.global.opencv_objdetect.*;
 
 import java.io.DataInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
@@ -60,16 +62,18 @@ public class MjpegView extends SurfaceView{
     Uri mUri;
     private Context mContext;
     private String url = null;
-    // FFmpegFrameRecorder recorder = null;
+    FFmpegFrameRecorder recorder = null;
     public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
         mContext = context;
         mResolver = mContext.getContentResolver();
-//        ContentValues contentValues = new ContentValues();
-//        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "recording.mjpeg");
-//        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
-//        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-//        mUri = mResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "kuku");
+        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
+        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+        mUri = mResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+
+        is_recording = true;
         options.inMutable = true;
         holder = this.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
@@ -84,7 +88,7 @@ public class MjpegView extends SurfaceView{
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
                 try {
-                    //stopRecording();
+                    stopRecording();
                 }catch (Exception ignored){}
                 stopPlayback();
             }
@@ -184,29 +188,31 @@ public class MjpegView extends SurfaceView{
             assert(canvas != null);
             holder.unlockCanvasAndPost(canvas);
             if (is_recording) {
-//                if(recorder == null) {
-//                    startRecording();
-//                }
-//                recorder.recordImage(bm.getWidth(), bm.getWidth(), 8, 4, bm.getWidth() * 4, org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
+                if(recorder == null) {
+                    startRecording();
+                }
+                recorder.recordImage(bm.getWidth(), bm.getWidth(), 8, 4, bm.getWidth() * 4, org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
             }
         }
     }
-//    public void startRecording() throws FFmpegFrameRecorder.Exception {
-//        recorder = new FFmpegFrameRecorder("recording.avi", bm.getWidth(), bm.getWidth());
-//        recorder.setVideoCodec(org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
-//        recorder.setFormat("avi");
-//        recorder.setFrameRate(8); //  todo add current frame rate variable
-//        recorder.start();
-//        is_recording = true;
-//    }
-//    public void stopRecording() throws FFmpegFrameRecorder.Exception {
-//        if(recorder != null) {
-//            recorder.stop();
-//            recorder = null;
-//
-//        }
-//        is_recording = false;
-//    }
+    public void startRecording() throws FFmpegFrameRecorder.Exception, FileNotFoundException {
+        OutputStream os = mResolver.openOutputStream(mUri);
+        assert(os != null);
+        recorder = new FFmpegFrameRecorder(os, bm.getWidth(), bm.getWidth());
+        recorder.setVideoCodec(org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
+        recorder.setFormat("avi");
+        recorder.setFrameRate(8); //  todo add current frame rate variable
+        recorder.start();
+        is_recording = true;
+    }
+    public void stopRecording() throws FFmpegFrameRecorder.Exception {
+        if(recorder != null) {
+            recorder.stop();
+            recorder = null;
+
+        }
+        is_recording = false;
+    }
     public void connect() {
         for(int i = 0;; i++) {
             startTether(); // check that tethering is on

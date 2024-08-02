@@ -12,6 +12,10 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters 'arm64-v8a'
+        }
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,6 +33,12 @@ android {
     buildFeatures {
         viewBinding true
     }
+    packagingOptions {
+
+        pickFirst 'META-INF/native-image/android-arm64/jnijavacpp/jni-config.json'
+        pickFirst 'META-INF/native-image/android-arm64/jnijavacpp/reflect-config.json'
+    }
+
 }
 
 dependencies {
@@ -39,14 +49,24 @@ dependencies {
     implementation libs.lifecycle.viewmodel.ktx
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
-//    implementation files('libs/javacv.jar')
-//    implementation files('libs/javacv-platform.jar')
-////    implementation files('libs/opencv-android-arm64.jar')
-//    implementation files('libs/javacpp-android-arm64.jar')
-//    implementation files('libs/ffmpeg-android-arm64-gpl.jar')
-////    implementation files('libs/opencv.jar')
-//    implementation files('libs/ffmpeg.jar')
-//    implementation files('libs/javacpp.jar')
+//    def javacvVersion = "1.5.9"  // Use the latest version available
+//    def ffmpegVersion = "1.5.9"  // Use the latest version available
+//
+//    implementation "org.bytedeco:javacv:${javacvVersion}"
+//    implementation "org.bytedeco:javacpp:${javacvVersion}"
+//    implementation "org.bytedeco:ffmpeg:${ffmpegVersion}"
+//    implementation "org.bytedeco:ffmpeg:${ffmpegVersion}:android-arm64"
+    //implementation files('libs/javacpp-platform.jar')
+    //implementation files('libs/javacv-platform.jar')
+    implementation files('libs/javacv.jar')
+    implementation files('libs/ffmpeg.jar')
+    implementation files('libs/javacpp.jar')
+    implementation files('libs/javacpp-android-arm64.jar')
+    implementation files('libs/ffmpeg-android-arm64.jar')
+    implementation files('libs/opencv-android-arm64.jar')
+    implementation files('libs/openblas-android-arm64.jar')
+    implementation files('libs/openblas.jar')
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
