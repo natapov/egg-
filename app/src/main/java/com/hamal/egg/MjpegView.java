@@ -5,6 +5,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 //import android.net.TetheringManager;
 import android.net.Uri;
@@ -80,7 +82,7 @@ public class MjpegView extends SurfaceView{
         });
 
     }
-    private int read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
+    private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
         byte c;
         for (int i = 0; i < HEADER_MAX_LENGTH; i++) {
@@ -89,13 +91,13 @@ public class MjpegView extends SurfaceView{
             if (c == sequence[seqIndex]) {
                 seqIndex++;
                 if (seqIndex == sequence.length) {
-                    return i + 1;
+                    return;
                 }
             } else {
                 seqIndex = 0;
             }
         }
-        return -1;
+        throw new IOException("Bad packet format");
     }
     public void record_frame(){
         try (OutputStream outputStream = mResolver.openOutputStream(mUri)) {
@@ -108,14 +110,11 @@ public class MjpegView extends SurfaceView{
         try {
             connection = (HttpURLConnection) new URL(this.url).openConnection();
             connection.setDoInput(true);
-            connection.setConnectTimeout(300);
+            connection.setConnectTimeout(30);
             connection.setReadTimeout(300);
             connection.connect();
             bis = new DataInputStream(connection.getInputStream());
-            int res = read_until_sequence(headerBuffer, bis, SOI_MARKER);
-            if(res == -1) {
-                return -1;
-            }
+            read_until_sequence(headerBuffer, bis, SOI_MARKER);
             int contentLength = parseContentLength(headerBuffer);
 
             bis.readFully(frameBuffer,0, contentLength);
@@ -138,35 +137,56 @@ public class MjpegView extends SurfaceView{
     public void run_loop() throws IOException {
         boolean first_frame = true;
         Canvas canvas = null;
+        int allowed_failed_frames = 100;
+        Paint frame_paint = new Paint();
+        frame_paint.setStyle(Paint.Style.STROKE);
+        final int stroke_width = 4;
+        final int frame_offset = stroke_width/2;
+        frame_paint.setStrokeWidth(stroke_width);
+        boolean read_success = false;
         while(is_run){
+            int bytesRead = 0;
+            read_success = true;
             try {
-                canvas = null;
-                int bytesRead = read_frame();
-                if(bytesRead < 0){
-                    continue;
+                bytesRead = read_frame();
+                assert (bytesRead > 0);
+            }
+            catch (Exception e){
+                Log.e("Draw loop", Arrays.toString(e.getStackTrace()));
+                read_success = false;
+                frame_paint.setColor(Color.RED);
+                if(allowed_failed_frames-- == 0) {
+                    throw e;
                 }
+            }
+            try {
+                canvas = holder.lockCanvas();
+            } catch (Exception ignored){}
+            if (canvas == null) {
+                Log.w("draw thread", "null canvas, skipping render");
+                continue;
+            }
+            if (read_success) {
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
-                if(first_frame){
+                if (first_frame ) {
                     dest_rect = destRect(bm.getWidth(), bm.getHeight());
                     options.inBitmap = bm; //reuse bm after first time
                     first_frame = false;
                 }
-                canvas = holder.lockCanvas();
-                if (canvas == null) {
-                    Log.w("draw thread", "null canvas, skipping render");
-                    continue;
-                }
-                canvas.drawBitmap(bm, null, dest_rect, null);
-
-            } finally {
-                if(canvas != null) {
-                    holder.unlockCanvasAndPost(canvas);
-                }
+                frame_paint.setColor(Color.GRAY);
             }
+            canvas.drawRect(dest_rect.left - frame_offset,
+                    dest_rect.top - frame_offset,
+                    dest_rect.right + frame_offset,
+                    dest_rect.bottom + frame_offset,
+                    frame_paint);
+            canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+            assert(canvas != null);
+            holder.unlockCanvasAndPost(canvas);
         }
     }
     public void connect() {
-        for(int i = 0; i < 100; i++) {
+        for(int i = 0;; i++) {
             startTether(); // check that tethering is on
             try {
                 run_loop();
