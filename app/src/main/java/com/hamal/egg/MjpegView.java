@@ -1,6 +1,7 @@
 package com.hamal.egg;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -8,26 +9,17 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 //import android.net.TetheringManager;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
-import android.os.Environment;
-import android.os.ParcelFileDescriptor;
+
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-
-
-import org.jcodec.api.android.AndroidSequenceEncoder;
-import org.jcodec.common.io.FileChannelWrapper;
-import org.jcodec.common.io.NIOUtils;
-import org.jcodec.common.io.SeekableByteChannel;
-import org.jcodec.common.model.Rational;
-import org.jcodec.containers.mxf.model.FileDescriptor;
-
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -52,8 +44,9 @@ public class MjpegView extends SurfaceView{
     private final String CONTENT_LENGTH = "Content-Length: ";
     Thread thread = null;
     boolean is_run = false;
-    boolean is_recording = false;
     Rect dest_rect = null;
+    static final int default_width = 640;
+    static final int default_height= 360;
     Bitmap bm;
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
@@ -65,13 +58,12 @@ public class MjpegView extends SurfaceView{
         // recording_file = new File(context.getExternalFilesDir(null), "recording");
         recording_handler = new RecordingHandler(context);
         recording_handler.startRecording();
-        is_recording = true;
         options.inMutable = true;
         holder = this.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                dest_rect = destRect(640, 360); //todo verify how constant this really is
+                dest_rect = destRect(default_width, default_height); //todo verify how constant this really is
             }
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
@@ -193,7 +185,7 @@ public class MjpegView extends SurfaceView{
                 }
             }
 
-            if (is_recording && read_success) {
+            if (read_success) {
                 try {
                     String header = "My header kuku";
                     recording_handler.onFrameCapturedWithHeader(frameBuffer, bytesRead, header.getBytes(), header.length());
