@@ -1,8 +1,6 @@
 package com.hamal.egg;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -31,6 +29,7 @@ import org.jcodec.common.model.Rational;
 import org.jcodec.containers.mxf.model.FileDescriptor;
 
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,25 +53,19 @@ public class MjpegView extends SurfaceView{
     Thread thread = null;
     boolean is_run = false;
     boolean is_recording = false;
-    ContentResolver mResolver;
     Rect dest_rect = null;
     Bitmap bm;
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
     Uri mUri;
+    File recording_file = null;
     private Context mContext;
     AndroidSequenceEncoder  recorder;
     private String url = null;
     public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
-        mContext = context;
-        mResolver = mContext.getContentResolver();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "recording.avi");
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
-        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-        mUri = mResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+        recording_file = new File(context.getExternalFilesDir(null), "recording");
         is_recording = true;
         options.inMutable = true;
         holder = this.getHolder();
@@ -81,7 +74,6 @@ public class MjpegView extends SurfaceView{
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
                 dest_rect = destRect(640, 360); //todo verify how constant this really is
             }
-
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
                 // Code to execute when the surface dimensions or format change
@@ -96,8 +88,6 @@ public class MjpegView extends SurfaceView{
         });
 
     }
-
-
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
         byte c;
@@ -192,10 +182,10 @@ public class MjpegView extends SurfaceView{
                     canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
                 }
             }
-            catch (Exception e){
-                Log.e("draw_to_canvas", Arrays.toString(e.getStackTrace()));
+            catch (Exception canvas_e){
+                Log.e("draw_to_canvas", Arrays.toString(canvas_e.getStackTrace()));
                 if(allowed_failed_frames-- == 0) {
-                    throw e;
+                    throw canvas_e;
                 }
             }
             finally {
@@ -206,16 +196,15 @@ public class MjpegView extends SurfaceView{
             }
 
             if (is_recording) {
-                continue;
-//                if(recorder == null) {
-//                    ParcelFileDescriptor pfd = mResolver.openFileDescriptor(mUri, "rw");
-//                    if (pfd == null) {
-//                        throw new FileNotFoundException("Failed to open Uri");
-//                    }
-//                    FileChannelWrapper file_channel_wrapper = new FileChannelWrapper(new ParcelFileDescriptor.AutoCloseInputStream(pfd).getChannel());
-//                    recorder = new AndroidSequenceEncoder(file_channel_wrapper, new Rational(8,1));
-//                }
-//                recorder.encodeImage(bm);
+                try {
+                    if(recorder == null) {
+                        recorder = AndroidSequenceEncoder.createSequenceEncoder(recording_file, 8);
+                    }
+                    recorder.encodeImage(bm);
+                }
+                catch (Exception recording_e){
+                    Log.e("recording", Arrays.toString(recording_e.getStackTrace()));
+                }
             }
         }
     }
