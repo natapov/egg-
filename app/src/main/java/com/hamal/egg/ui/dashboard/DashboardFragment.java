@@ -37,9 +37,6 @@ public class DashboardFragment extends Fragment {
     }
     @Override
     public void onDestroyView() {
-//        binding.recordButton1.setChecked(false);
-//        binding.recordButton2.setChecked(false);
-//        binding.recordButton3.setChecked(false);
         binding.cam1.stopPlayback();
         binding.cam2.stopPlayback();
         binding.cam3.stopPlayback();

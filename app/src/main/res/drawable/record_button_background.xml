@@ -10,7 +10,7 @@
     <item android:state_selected="false">
         <shape android:shape="oval">
             <solid android:color="#FFFFFF" /> <!-- White color for non-recording state -->
-            <stroke android:width="2dp" android:color="#FF0000" /> <!-- Red border -->
+            <stroke android:width="3dp" android:color="#FF0000" /> <!-- Red border -->
             <size android:width="48dp" android:height="48dp" />
         </shape>
     </item>

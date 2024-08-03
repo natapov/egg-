@@ -115,7 +115,9 @@ public class MjpegView extends SurfaceView{
     public void run_loop() throws IOException {
         boolean first_frame = true;
         Canvas canvas = null;
-        int allowed_failed_frames = 100;
+        int dropped_frames = 0;
+        int recorded_frames = 0;
+        final int max_allowed_dropped_frames = 10; // in a row
         Paint frame_paint = new Paint();
         frame_paint.setStyle(Paint.Style.STROKE);
         frame_paint.setStrokeWidth(stroke_width);
@@ -130,13 +132,13 @@ public class MjpegView extends SurfaceView{
             catch (Exception e){
                 Log.e("read_frame", Arrays.toString(e.getStackTrace()));
                 read_success = false;
-
                 frame_paint.setColor(Color.RED);
-                if(allowed_failed_frames-- == 0) {
+                if(dropped_frames++ == max_allowed_dropped_frames) {
                     throw e;
                 }
             }
             if (read_success) {
+                dropped_frames = 0;
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
                 if (first_frame) {
                     options.inBitmap = bm; //reuse bm after first time
@@ -161,7 +163,7 @@ public class MjpegView extends SurfaceView{
             }
             catch (Exception canvas_e){
                 Log.e("draw_to_canvas", Arrays.toString(canvas_e.getStackTrace()));
-                if(allowed_failed_frames-- == 0) {
+                if(dropped_frames++ == max_allowed_dropped_frames) {
                     throw canvas_e;
                 }
             }
@@ -174,7 +176,7 @@ public class MjpegView extends SurfaceView{
 
             if (is_recording && read_success) {
                 try {
-                    String header = "";
+                    String header = String.format("Frame: %d \r\n", recorded_frames + dropped_frames);
                     recording_handler.capture_frame(frameBuffer, bytesRead, header.getBytes(), header.length());
                 }
                 catch (Exception recording_e){
