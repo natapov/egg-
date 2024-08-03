@@ -19,7 +19,9 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
+    configurations.configureEach {
+        resolutionStrategy.force 'com.google.code.findbugs:jsr305:3.0.2'
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -33,10 +35,9 @@ android {
     buildFeatures {
         viewBinding true
     }
-    packagingOptions {
-        pickFirst 'META-INF/native-image/android-arm64/jnijavacpp/jni-config.json'
-        pickFirst 'META-INF/native-image/android-arm64/jnijavacpp/reflect-config.json'
-    }
+}
+android {
+
 }
 
 dependencies {
@@ -47,14 +48,18 @@ dependencies {
     implementation libs.lifecycle.viewmodel.ktx
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
-    implementation files('libs/javacv.jar')
-    implementation files('libs/ffmpeg.jar')
-    implementation files('libs/javacpp.jar')
-    implementation files('libs/javacpp-android-arm64.jar')
-    implementation files('libs/ffmpeg-android-arm64.jar')
-    implementation files('libs/opencv-android-arm64.jar')
-    implementation files('libs/openblas-android-arm64.jar')
-    implementation files('libs/openblas.jar')
+    implementation 'org.jcodec:jcodec:0.2.5'
+    implementation 'org.jcodec:jcodec-android:0.2.5'
+
+//    implementation files('libs/javacv.jar')
+//    implementation files('libs/ffmpeg.jar')
+//    implementation files('libs/javacpp.jar')
+//    implementation files('libs/javacpp-android-arm64.jar')
+//    implementation files('libs/ffmpeg-android-arm64.jar')
+//    implementation files('libs/opencv.jar')
+//    implementation files('libs/opencv-android-arm64.jar')
+//    implementation files('libs/openblas-android-arm64.jar')
+//    implementation files('libs/openblas.jar')
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

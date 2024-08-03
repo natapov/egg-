@@ -1,8 +1,8 @@
 package com.hamal.egg;
-
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -20,28 +21,28 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
-import org.bytedeco.javacv.*;
-//import org.bytedeco.opencv.opencv_core.*;
-//import org.bytedeco.opencv.opencv_imgproc.*;
-//import org.bytedeco.opencv.opencv_calib3d.*;
-//import org.bytedeco.opencv.opencv_objdetect.*;
-//import static org.bytedeco.opencv.global.opencv_core.*;
-//import static org.bytedeco.opencv.global.opencv_imgproc.*;
-//import static org.bytedeco.opencv.global.opencv_calib3d.*;
-//import static org.bytedeco.opencv.global.opencv_objdetect.*;
+
+
+import org.jcodec.api.android.AndroidSequenceEncoder;
+import org.jcodec.common.io.FileChannelWrapper;
+import org.jcodec.common.io.NIOUtils;
+import org.jcodec.common.io.SeekableByteChannel;
+import org.jcodec.common.model.Rational;
+import org.jcodec.containers.mxf.model.FileDescriptor;
 
 import java.io.DataInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 100;
-
     final static int stroke_width = 4;
     final static int frame_offset = stroke_width/2;
     private final static int FRAME_MAX_LENGTH = 150000;
@@ -61,24 +62,24 @@ public class MjpegView extends SurfaceView{
     Exception last_thread_exception = null;
     Uri mUri;
     private Context mContext;
+    AndroidSequenceEncoder  recorder;
     private String url = null;
-    FFmpegFrameRecorder recorder = null;
     public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
         mContext = context;
         mResolver = mContext.getContentResolver();
         ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "kuku");
+        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, "recording.avi");
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
         contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
         mUri = mResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
-
         is_recording = true;
         options.inMutable = true;
         holder = this.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                dest_rect = destRect(640, 360); //todo verify how constant this really is
             }
 
             @Override
@@ -95,6 +96,8 @@ public class MjpegView extends SurfaceView{
         });
 
     }
+
+
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
         byte c;
@@ -158,58 +161,69 @@ public class MjpegView extends SurfaceView{
                 assert (bytesRead > 0);
             }
             catch (Exception e){
-                Log.e("Draw loop", Arrays.toString(e.getStackTrace()));
+                Log.e("read_frame", Arrays.toString(e.getStackTrace()));
                 read_success = false;
+
                 frame_paint.setColor(Color.RED);
                 if(allowed_failed_frames-- == 0) {
                     throw e;
                 }
             }
-            canvas = holder.lockCanvas();
-            if (canvas == null) {
-                Log.w("draw thread", "null canvas, skipping render");
-                continue;
-            }
             if (read_success) {
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
-                if (first_frame ) {
-                    dest_rect = destRect(bm.getWidth(), bm.getHeight());
+                if (first_frame) {
                     options.inBitmap = bm; //reuse bm after first time
                     first_frame = false;
                 }
                 frame_paint.setColor(Color.GRAY);
             }
-            canvas.drawRect(dest_rect.left - frame_offset,
-                    dest_rect.top - frame_offset,
-                    dest_rect.right + frame_offset,
-                    dest_rect.bottom + frame_offset,
-                    frame_paint);
-            canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
-            assert(canvas != null);
-            holder.unlockCanvasAndPost(canvas);
-            if (is_recording) {
-                if(recorder == null) {
-                    startRecording();
+            try {
+                canvas = holder.lockCanvas();
+                if (canvas == null) {
+                    Log.w("draw thread", "null canvas, skipping render");
+                    continue;
                 }
-                recorder.recordImage(bm.getWidth(), bm.getWidth(), 8, 4, bm.getWidth() * 4, org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
+                canvas.drawRect(dest_rect.left - frame_offset,
+                        dest_rect.top - frame_offset,
+                        dest_rect.right + frame_offset,
+                        dest_rect.bottom + frame_offset,
+                        frame_paint);
+                if(!first_frame) {
+                    canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+                }
+            }
+            catch (Exception e){
+                Log.e("draw_to_canvas", Arrays.toString(e.getStackTrace()));
+                if(allowed_failed_frames-- == 0) {
+                    throw e;
+                }
+            }
+            finally {
+                if(canvas != null){
+                    holder.unlockCanvasAndPost(canvas);
+                    canvas = null;
+                }
+            }
+
+            if (is_recording) {
+                continue;
+//                if(recorder == null) {
+//                    ParcelFileDescriptor pfd = mResolver.openFileDescriptor(mUri, "rw");
+//                    if (pfd == null) {
+//                        throw new FileNotFoundException("Failed to open Uri");
+//                    }
+//                    FileChannelWrapper file_channel_wrapper = new FileChannelWrapper(new ParcelFileDescriptor.AutoCloseInputStream(pfd).getChannel());
+//                    recorder = new AndroidSequenceEncoder(file_channel_wrapper, new Rational(8,1));
+//                }
+//                recorder.encodeImage(bm);
             }
         }
     }
-    public void startRecording() throws FFmpegFrameRecorder.Exception, FileNotFoundException {
-        OutputStream os = mResolver.openOutputStream(mUri);
-        assert(os != null);
-        recorder = new FFmpegFrameRecorder(os, bm.getWidth(), bm.getWidth());
-        recorder.setVideoCodec(org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_MJPEG);
-        recorder.setFormat("avi");
-        recorder.setFrameRate(8); //  todo add current frame rate variable
-        recorder.start();
-        is_recording = true;
-    }
-    public void stopRecording() throws FFmpegFrameRecorder.Exception {
-        if(recorder != null) {
-            recorder.stop();
-            recorder = null;
 
+    public void stopRecording() throws IOException {
+        if(recorder != null) {
+            recorder.finish();
+            recorder = null;
         }
         is_recording = false;
     }

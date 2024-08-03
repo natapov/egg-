@@ -7,7 +7,6 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 import com.hamal.egg.databinding.ActivityMainBinding;
-
 public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
 

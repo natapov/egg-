@@ -12,8 +12,6 @@ public class DashboardFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        System.loadLibrary("jniavutil");
-        System.loadLibrary("jniopencv_core");
         binding = CameraViewBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -21,8 +19,8 @@ public class DashboardFragment extends Fragment {
     public void onResume() {
         super.onResume();
         binding.cam1.startPlayback("http://192.168.192.220:8008/stream.mjpg");
-        binding.cam2.startPlayback("http://192.168.192.220:8008/stream.mjpg");
-        binding.cam3.startPlayback("http://192.168.192.220:8008/stream.mjpg");
+//        binding.cam2.startPlayback("http://192.168.192.220:8008/stream.mjpg");
+//        binding.cam3.startPlayback("http://192.168.192.220:8008/stream.mjpg");
     }
     @Override
     public void onDestroyView() {
