@@ -5,8 +5,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.Log;
 import android.widget.Toast;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,7 +18,6 @@ public class RecordingHandler {
 
     private final Context context;
     private DataOutputStream dos;
-    private boolean isRecording;
     private Bitmap lastBitmap;
 
     public RecordingHandler(Context context) {
@@ -36,7 +33,6 @@ public class RecordingHandler {
             FileOutputStream fos = new FileOutputStream(mjpegFilePath);
             dos = new DataOutputStream(fos);
             Toast.makeText(context, "start recording, file path is:" + mjpegFilePath, Toast.LENGTH_LONG).show();
-            isRecording = true;
         } catch (FileNotFoundException e) {
             Log.e(TAG, e.getMessage());
         }
@@ -48,7 +44,6 @@ public class RecordingHandler {
     public void stopRecording() throws IOException {
         dos.flush();
         dos.close();
-        isRecording = false;
     }
 
     /**
@@ -110,15 +105,13 @@ public class RecordingHandler {
         return createSavingFile("video", "mjpeg");
     }
 
-    public void onFrameCapturedWithHeader(byte[] bitmap, int bitmap_size, byte[] header, int header_size) {
-        if (isRecording) {
-            try {
-                dos.write(header,0, header_size);
-                dos.write(bitmap,0, bitmap_size);
-                dos.flush();
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage());
-            }
+    public void capture_frame(byte[] bitmap, int bitmap_size, byte[] header, int header_size) {
+        try {
+            dos.write(header,0, header_size);
+            dos.write(bitmap,0, bitmap_size);
+            dos.flush();
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
         }
     }
 }

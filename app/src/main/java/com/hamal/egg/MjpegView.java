@@ -1,7 +1,5 @@
 package com.hamal.egg;
-import android.content.ContentResolver;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -9,27 +7,18 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 //import android.net.TetheringManager;
-import android.net.wifi.WifiManager;
 
-import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 public class MjpegView extends SurfaceView{
@@ -44,6 +33,7 @@ public class MjpegView extends SurfaceView{
     private final String CONTENT_LENGTH = "Content-Length: ";
     Thread thread = null;
     boolean is_run = false;
+    boolean is_recording;
     Rect dest_rect = null;
     static final int default_width = 640;
     static final int default_height= 360;
@@ -55,9 +45,7 @@ public class MjpegView extends SurfaceView{
     private String url = null;
     public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
-        // recording_file = new File(context.getExternalFilesDir(null), "recording");
         recording_handler = new RecordingHandler(context);
-        recording_handler.startRecording();
         options.inMutable = true;
         holder = this.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
@@ -179,16 +167,16 @@ public class MjpegView extends SurfaceView{
                 }
             }
             finally {
-                if(canvas != null){
+                if (canvas != null) {
                     holder.unlockCanvasAndPost(canvas);
                     canvas = null;
                 }
             }
 
-            if (read_success) {
+            if (is_recording && read_success) {
                 try {
                     String header = "My header kuku";
-                    recording_handler.onFrameCapturedWithHeader(frameBuffer, bytesRead, header.getBytes(), header.length());
+                    recording_handler.capture_frame(frameBuffer, bytesRead, header.getBytes(), header.length());
                 }
                 catch (Exception recording_e){
                     Log.e("recording", recording_e.toString());
@@ -197,8 +185,18 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void stopRecording() throws IOException {
-        recording_handler.stopRecording();
+    public void startRecording() {
+        recording_handler.startRecording();
+        is_recording = true;
+    }
+    public void stopRecording() {
+        try {
+            recording_handler.stopRecording();
+        }
+        catch (IOException e){
+            Log.e("add a tag", e.toString());
+        }
+        is_recording = false;
     }
     public void connect() {
         for(int i = 0;; i++) {

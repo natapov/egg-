@@ -12,8 +12,7 @@
         android:id="@+id/box_1"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:background="@android:color/holo_green_light"
+        android:background="@android:color/black"
         app:layout_constraintBottom_toTopOf="@+id/box_2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -41,43 +40,73 @@
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-    <FrameLayout
+
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/box_2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:background="@android:color/black"
+
         app:layout_constraintTop_toBottomOf="@+id/box_1"
         app:layout_constraintBottom_toTopOf="@+id/box_3"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        android:layout_weight="1"
-        android:background="@android:color/holo_red_light">
+        app:layout_constraintStart_toStartOf="parent">
 
         <com.hamal.egg.MjpegView
             android:id="@+id/cam_2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="@dimen/default_cam_width"
+            android:layout_height="@dimen/default_cam_height"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/record_button_2"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ToggleButton
+            android:id="@+id/record_button_2"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/record_button_background"
+            android:textOn=""
+            android:textOff=""
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
-    </FrameLayout>
-    <FrameLayout
+            app:layout_constraintStart_toEndOf="@+id/cam_2"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/box_3"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:background="@android:color/black"
         app:layout_constraintTop_toBottomOf="@+id/box_2"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:background="@android:color/holo_blue_bright"
-        android:layout_weight="1">
+        app:layout_constraintStart_toStartOf="parent">
 
         <com.hamal.egg.MjpegView
             android:id="@+id/cam_3"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="@dimen/default_cam_width"
+            android:layout_height="@dimen/default_cam_height"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/record_button_3"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ToggleButton
+            android:id="@+id/record_button_3"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/record_button_background"
+            android:textOn=""
+            android:textOff=""
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
-    </FrameLayout>
+            app:layout_constraintStart_toEndOf="@+id/cam_3"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
