@@ -60,7 +60,6 @@ public class MjpegView extends SurfaceView{
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
                 try {
-                    stopRecording();
                 }catch (Exception ignored){}
                 stopPlayback();
             }
@@ -175,7 +174,7 @@ public class MjpegView extends SurfaceView{
 
             if (is_recording && read_success) {
                 try {
-                    String header = "My header kuku";
+                    String header = "";
                     recording_handler.capture_frame(frameBuffer, bytesRead, header.getBytes(), header.length());
                 }
                 catch (Exception recording_e){
