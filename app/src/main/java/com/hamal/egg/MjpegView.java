@@ -183,17 +183,30 @@ public class MjpegView extends SurfaceView{
             }
         }
     }
+    public boolean toggleRecording(){
+        if (is_recording) {
+            stopRecording();
+        }
+        else {
+            startRecording();
+        }
+        return is_recording;
+    }
 
     public void startRecording() {
+        assert(!is_recording);
         recording_handler.startRecording();
         is_recording = true;
     }
     public void stopRecording() {
-        try {
-            recording_handler.stopRecording();
-        }
-        catch (IOException e){
-            Log.e("add a tag", e.toString());
+        if (is_recording) {
+            try {
+                recording_handler.stopRecording();
+            }
+            catch (IOException e){
+                Log.e("add a tag", e.toString());
+
+            }
         }
         is_recording = false;
     }
@@ -203,7 +216,7 @@ public class MjpegView extends SurfaceView{
             try {
                 run_loop();
             }
-            catch (Exception e){
+            catch (IOException e){
                 last_thread_exception = e;
                 Log.e("Restarting draw loop", "got exception: " + Arrays.toString(e.getStackTrace()));
                 continue; // try again

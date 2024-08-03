@@ -9,11 +9,17 @@
         android:id="@+id/navigation_dashboard"
         android:name="com.hamal.egg.ui.dashboard.DashboardFragment"
         android:label="@string/title_dashboard"
-        tools:layout="@layout/camera_view" />
+        tools:layout="@layout/camera_view"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/navigation_dashboard"
+        app:popUpToInclusive="true" />
 
     <fragment
         android:id="@+id/navigation_notifications"
         android:name="com.hamal.egg.ui.notifications.NotificationsFragment"
         android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        tools:layout="@layout/fragment_notifications"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/navigation_notifications"
+        app:popUpToInclusive="true" />
 </navigation>

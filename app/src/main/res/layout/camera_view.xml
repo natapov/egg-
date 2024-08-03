@@ -27,12 +27,12 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <androidx.appcompat.widget.AppCompatToggleButton
+        <Button
             android:id="@+id/record_button_1"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/record_button_background"
-            android:textOn="rec"
+            android:text="rec"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cam_1"
             app:layout_constraintTop_toTopOf="parent"
@@ -60,12 +60,12 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <ToggleButton
+        <Button
             android:id="@+id/record_button_2"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/record_button_background"
-            android:textOn="rec"
+            android:text="rec"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cam_2"
             app:layout_constraintTop_toTopOf="parent"
@@ -91,12 +91,12 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
-        <ToggleButton
+        <Button
             android:id="@+id/record_button_3"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/record_button_background"
-            android:textOn="rec"
+            android:text="rec"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cam_3"
             app:layout_constraintTop_toTopOf="parent"

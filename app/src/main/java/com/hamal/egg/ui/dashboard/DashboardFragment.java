@@ -1,4 +1,5 @@
 package com.hamal.egg.ui.dashboard;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,18 +16,14 @@ public class DashboardFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         binding = CameraViewBinding.inflate(inflater, container, false);
-        binding.recordButton1.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                binding.cam1.startRecording();
-            } else {
-                binding.cam1.stopRecording();
-            }
+        binding.recordButton1.setOnClickListener(n -> {
+            binding.recordButton1.setSelected(binding.cam1.toggleRecording());
         });
-        binding.recordButton2.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) { binding.cam2.startRecording();} else { binding.cam2.stopRecording(); }
+        binding.recordButton2.setOnClickListener(n -> {
+            binding.recordButton2.setSelected(binding.cam2.toggleRecording());
         });
-        binding.recordButton3.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) { binding.cam3.startRecording();} else { binding.cam3.stopRecording(); }
+        binding.recordButton3.setOnClickListener(n -> {
+            binding.recordButton3.setSelected(binding.cam3.toggleRecording());
         });
         return binding.getRoot();
     }
@@ -40,6 +37,9 @@ public class DashboardFragment extends Fragment {
     }
     @Override
     public void onDestroyView() {
+//        binding.recordButton1.setChecked(false);
+//        binding.recordButton2.setChecked(false);
+//        binding.recordButton3.setChecked(false);
         binding.cam1.stopPlayback();
         binding.cam2.stopPlayback();
         binding.cam3.stopPlayback();
