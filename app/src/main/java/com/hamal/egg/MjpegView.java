@@ -58,14 +58,13 @@ public class MjpegView extends SurfaceView{
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
-    Uri mUri;
-    File recording_file = null;
-    private Context mContext;
-    AndroidSequenceEncoder  recorder;
+    RecordingHandler  recording_handler;
     private String url = null;
     public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
-        recording_file = new File(context.getExternalFilesDir(null), "recording");
+        // recording_file = new File(context.getExternalFilesDir(null), "recording");
+        recording_handler = new RecordingHandler(context);
+        recording_handler.startRecording();
         is_recording = true;
         options.inMutable = true;
         holder = this.getHolder();
@@ -119,7 +118,6 @@ public class MjpegView extends SurfaceView{
             int contentLength = parseContentLength(headerBuffer);
 
             data_input.readFully(frameBuffer,0, contentLength);
-            // record_frame();
             return contentLength;
         }
         finally {
@@ -195,26 +193,20 @@ public class MjpegView extends SurfaceView{
                 }
             }
 
-            if (is_recording) {
+            if (is_recording && read_success) {
                 try {
-                    if(recorder == null) {
-                        recorder = AndroidSequenceEncoder.createSequenceEncoder(recording_file, 8);
-                    }
-                    recorder.encodeImage(bm);
+                    String header = "My header kuku";
+                    recording_handler.onFrameCapturedWithHeader(frameBuffer, bytesRead, header.getBytes(), header.length());
                 }
                 catch (Exception recording_e){
-                    Log.e("recording", Arrays.toString(recording_e.getStackTrace()));
+                    Log.e("recording", recording_e.toString());
                 }
             }
         }
     }
 
     public void stopRecording() throws IOException {
-        if(recorder != null) {
-            recorder.finish();
-            recorder = null;
-        }
-        is_recording = false;
+        recording_handler.stopRecording();
     }
     public void connect() {
         for(int i = 0;; i++) {
