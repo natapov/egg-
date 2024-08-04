@@ -32,8 +32,8 @@ public class DashboardFragment extends Fragment {
         super.onResume();
 
         binding.cam1.startPlayback("http://192.168.192.220:8008/stream.mjpg");
-        binding.cam2.startPlayback("http://192.168.192.220:8008/stream.mjpg");
-        binding.cam3.startPlayback("http://192.168.192.220:8008/stream.mjpg");
+        binding.cam2.startPlayback("http://192.168.192.220:9800/stream.mjpg");
+        binding.cam3.startPlayback("http://192.168.192.220:9801/stream.mjpg");
     }
     @Override
     public void onDestroyView() {
