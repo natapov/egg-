@@ -12,12 +12,12 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
 import androidx.annotation.NonNull;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -42,11 +42,17 @@ public class MjpegView extends SurfaceView{
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
     RecordingHandler  recording_handler;
+    HttpURLConnection connection = null;
     private String url = null;
     public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
         super(context, attrs);
+        connection = (HttpURLConnection) new URL("http://192.168.192.220:8008/stream.mjpg").openConnection();
+        connection.setDoInput(true);
+        connection.setConnectTimeout(300);
+        connection.setReadTimeout(300);
         recording_handler = new RecordingHandler(context);
         options.inMutable = true;
+        //todo recover from connection loss
         holder = this.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -84,12 +90,8 @@ public class MjpegView extends SurfaceView{
     }
     public int read_frame() throws IOException {
         DataInputStream data_input = null;
-        HttpURLConnection connection = null;
+
         try {
-            connection = (HttpURLConnection) new URL(this.url).openConnection();
-            connection.setDoInput(true);
-            connection.setConnectTimeout(300);
-            connection.setReadTimeout(300);
             connection.connect();
             data_input = new DataInputStream(connection.getInputStream());
             read_until_sequence(headerBuffer, data_input, SOI_MARKER);
@@ -99,11 +101,11 @@ public class MjpegView extends SurfaceView{
             return contentLength;
         }
         finally {
-            if (data_input != null) try {
-                data_input.close();
-            } catch (IOException e) {
-            }
-            if (connection != null) connection.disconnect();
+//            if (data_input != null) try {
+//                data_input.close();
+//            } catch (IOException e) {
+//            }
+//            if (connection != null) connection.disconnect();
         }
     }
     private Rect destRect(int bmw, int bmh) {
@@ -229,7 +231,7 @@ public class MjpegView extends SurfaceView{
     }
 
     public void startPlayback(String url) {
-        this.url = url;
+
         thread = new Thread(this::connect);
         is_run = true;
         thread.start();
