@@ -54,13 +54,12 @@ public class MjpegView extends SurfaceView{
                 dest_rect = destRect(default_width, default_height); //todo verify how constant this really is
             }
             @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
                 // Code to execute when the surface dimensions or format change
             }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                try {
-                }catch (Exception ignored){}
+                stopRecording();
                 stopPlayback();
             }
         });
@@ -178,6 +177,7 @@ public class MjpegView extends SurfaceView{
                 try {
                     String header = String.format("Frame: %d \r\n", recorded_frames + dropped_frames);
                     recording_handler.capture_frame(frameBuffer, bytesRead, header.getBytes(), header.length());
+                    recorded_frames += 1;
                 }
                 catch (Exception recording_e){
                     Log.e("recording", recording_e.toString());
