@@ -28,6 +28,7 @@ public class MjpegView extends SurfaceView{
     private final static int FRAME_MAX_LENGTH = 150000;
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
+    private static final int MAX_RETRIES_ON_CONNECT = 5;
     public byte[] frameBuffer = new byte[FRAME_MAX_LENGTH];
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     private final String CONTENT_LENGTH = "Content-Length: ";
@@ -43,16 +44,12 @@ public class MjpegView extends SurfaceView{
     Exception last_thread_exception = null;
     RecordingHandler  recording_handler;
     HttpURLConnection connection = null;
-    private String url = null;
-    public MjpegView(Context context, AttributeSet attrs) throws Exception{ //todo handle exceptions
+    private URL url = null;
+    public MjpegView(Context context, AttributeSet attrs) throws MalformedURLException { //todo handle exceptions
         super(context, attrs);
-        connection = (HttpURLConnection) new URL("http://192.168.192.220:8008/stream.mjpg").openConnection();
-        connection.setDoInput(true);
-        connection.setConnectTimeout(300);
-        connection.setReadTimeout(300);
+        url = new URL("http://192.168.9.220:8008/stream.mjpg");
         recording_handler = new RecordingHandler(context);
         options.inMutable = true;
-        //todo recover from connection loss
         holder = this.getHolder();
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -69,7 +66,14 @@ public class MjpegView extends SurfaceView{
                 stopPlayback();
             }
         });
+    }
 
+    public void prepare_connection() throws IOException {
+        connection = (HttpURLConnection) url.openConnection();
+        connection.setDoInput(true);
+        connection.setConnectTimeout(300);
+        connection.setReadTimeout(300);
+        connection.connect();
     }
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
@@ -90,56 +94,37 @@ public class MjpegView extends SurfaceView{
     }
     public int read_frame() throws IOException {
         DataInputStream data_input = null;
+        data_input = new DataInputStream(connection.getInputStream());
+        read_until_sequence(headerBuffer, data_input, SOI_MARKER);
+        int contentLength = parseContentLength(headerBuffer);
 
-        try {
-            connection.connect();
-            data_input = new DataInputStream(connection.getInputStream());
-            read_until_sequence(headerBuffer, data_input, SOI_MARKER);
-            int contentLength = parseContentLength(headerBuffer);
-
-            data_input.readFully(frameBuffer,0, contentLength);
-            return contentLength;
-        }
-        finally {
-//            if (data_input != null) try {
-//                data_input.close();
-//            } catch (IOException e) {
-//            }
-//            if (connection != null) connection.disconnect();
-        }
+        data_input.readFully(frameBuffer,0, contentLength);
+        return contentLength;
     }
     private Rect destRect(int bmw, int bmh) {
         final int x = (getWidth() / 2) - (bmw / 2);
         final int y = (getHeight() / 2) - (bmh / 2);
         return new Rect(x, y, bmw + x, bmh + y);
     }
-    public void run_loop() throws IOException {
+    public void run_loop() throws Exception {
         boolean first_frame = true;
         Canvas canvas = null;
-        int dropped_frames = 0;
         int recorded_frames = 0;
-        final int max_allowed_dropped_frames = 10; // in a row
         Paint frame_paint = new Paint();
         frame_paint.setStyle(Paint.Style.STROKE);
         frame_paint.setStrokeWidth(stroke_width);
-        boolean read_success = false;
+        Exception read_exception = null;
         while(is_run){
             int bytesRead = 0;
-            read_success = true;
             try {
                 bytesRead = read_frame();
                 assert (bytesRead > 0);
             }
-            catch (Exception e){
-                Log.e("read_frame", Arrays.toString(e.getStackTrace()));
-                read_success = false;
+            catch (IOException e){
+                read_exception = e;
                 frame_paint.setColor(Color.RED);
-                if(dropped_frames++ == max_allowed_dropped_frames) {
-                    throw e;
-                }
             }
-            if (read_success) {
-                dropped_frames = 0;
+            if (read_exception == null) {
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
                 if (first_frame) {
                     options.inBitmap = bm; //reuse bm after first time
@@ -162,22 +147,19 @@ public class MjpegView extends SurfaceView{
                     canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
                 }
             }
-            catch (Exception canvas_e){
-                Log.e("draw_to_canvas", Arrays.toString(canvas_e.getStackTrace()));
-                if(dropped_frames++ == max_allowed_dropped_frames) {
-                    throw canvas_e;
-                }
-            }
             finally {
                 if (canvas != null) {
                     holder.unlockCanvasAndPost(canvas);
                     canvas = null;
                 }
+                if(read_exception != null){
+                    throw read_exception;
+                }
             }
 
-            if (is_recording && read_success) {
+            if (is_recording) {
                 try {
-                    String header = String.format("Frame: %d \r\n", recorded_frames + dropped_frames);
+                    String header = String.format("Frame: %d \r\n", recorded_frames);
                     recording_handler.capture_frame(frameBuffer, bytesRead, header.getBytes(), header.length());
                     recorded_frames += 1;
                 }
@@ -218,11 +200,13 @@ public class MjpegView extends SurfaceView{
         for(int i = 0;; i++) {
             startTether(); // check that tethering is on
             try {
+                prepare_connection();
                 run_loop();
             }
-            catch (IOException e){
+            catch (Exception e){
                 last_thread_exception = e;
                 Log.e("Restarting draw loop", "got exception: " + Arrays.toString(e.getStackTrace()));
+
                 continue; // try again
             }
             last_thread_exception = null;
