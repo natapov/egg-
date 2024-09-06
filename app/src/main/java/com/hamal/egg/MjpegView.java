@@ -46,9 +46,8 @@ public class MjpegView extends SurfaceView{
     DataInputStream data_input = null;
 
     private URL url = null;
-    public MjpegView(Context context, AttributeSet attrs) throws MalformedURLException { //todo handle exceptions
+    public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        url = new URL("http://192.168.9.220:8008/stream.mjpg");
         recording_handler = new RecordingHandler(context);
         options.inMutable = true;
         holder = this.getHolder();
@@ -97,7 +96,6 @@ public class MjpegView extends SurfaceView{
     public int read_frame() throws IOException {
         read_until_sequence(headerBuffer, data_input, SOI_MARKER);
         int contentLength = parseContentLength(headerBuffer);
-
         data_input.readFully(frameBuffer,0, contentLength);
         return contentLength;
     }
@@ -214,8 +212,13 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(String url) {
-
+    public void startPlayback(String url_string) {
+        try {
+            url = new URL(url_string);
+        } catch (MalformedURLException e) {
+            Log.e("startPlayback", "Bad url given:" + url_string);
+            return;
+        }
         thread = new Thread(this::connect);
         is_run = true;
         thread.start();

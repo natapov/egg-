@@ -5,11 +5,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+
+import com.hamal.egg.MainActivity;
 import com.hamal.egg.databinding.CameraViewBinding;
 
 public class DashboardFragment extends Fragment {
     private CameraViewBinding binding;
-
+    private final DashboardViewModel model = new DashboardViewModel();
+    String ip = null;
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
@@ -23,15 +27,22 @@ public class DashboardFragment extends Fragment {
         binding.recordButton3.setOnClickListener(n -> {
             binding.recordButton3.setSelected(binding.cam3.toggleRecording());
         });
+        model.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
+            @Override
+            public void onChanged(String message) {
+                ip = message;
+            }
+        });
+        model.Start();
         return binding.getRoot();
     }
     @Override
     public void onResume() {
         super.onResume();
-
-        binding.cam1.startPlayback("http://192.168.9.220:8008/stream.mjpg");
-        binding.cam2.startPlayback("http://192.168.9.220:9800/stream.mjpg");
-        binding.cam3.startPlayback("http://192.168.9.220:9801/stream.mjpg");
+        while (ip == null) {};
+        binding.cam1.startPlayback("http://" + ip + ":8008/stream.mjpg");
+        binding.cam2.startPlayback("http://" + ip + ":9800/stream.mjpg");
+        binding.cam3.startPlayback("http://" + ip + ":9801/stream.mjpg");
     }
     @Override
     public void onDestroyView() {
