@@ -43,7 +43,8 @@ public class MjpegView extends SurfaceView{
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
     RecordingHandler  recording_handler;
-    HttpURLConnection connection = null;
+    DataInputStream data_input = null;
+
     private URL url = null;
     public MjpegView(Context context, AttributeSet attrs) throws MalformedURLException { //todo handle exceptions
         super(context, attrs);
@@ -69,11 +70,12 @@ public class MjpegView extends SurfaceView{
     }
 
     public void prepare_connection() throws IOException {
-        connection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoInput(true);
         connection.setConnectTimeout(300);
         connection.setReadTimeout(300);
         connection.connect();
+        data_input = new DataInputStream(connection.getInputStream());
     }
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
@@ -93,8 +95,6 @@ public class MjpegView extends SurfaceView{
         throw new IOException("Bad packet format");
     }
     public int read_frame() throws IOException {
-        DataInputStream data_input = null;
-        data_input = new DataInputStream(connection.getInputStream());
         read_until_sequence(headerBuffer, data_input, SOI_MARKER);
         int contentLength = parseContentLength(headerBuffer);
 
