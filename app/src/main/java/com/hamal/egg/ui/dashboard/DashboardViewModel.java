@@ -1,7 +1,10 @@
 package com.hamal.egg.ui.dashboard;
 
+import android.os.Build;
+
 import androidx.lifecycle.ViewModel;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
@@ -23,6 +26,7 @@ public class DashboardViewModel extends ViewModel {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String receivedString = new String(packet.getData(), 0, packet.getLength());
+               // allowCleartextForHost(receivedString);
                 synchronized (lock) {
                     latestReceivedString = receivedString;
                     lock.notifyAll(); // Notify all waiting threads
@@ -35,9 +39,10 @@ public class DashboardViewModel extends ViewModel {
 
     public String get_ip() throws InterruptedException {
         synchronized (lock) {
-            while (latestReceivedString == null) {
+            if (latestReceivedString == null) {
                 lock.wait(); // Wait until notified
             }
+            assert latestReceivedString != null;
             return latestReceivedString;
         }
     }
@@ -49,4 +54,19 @@ public class DashboardViewModel extends ViewModel {
             thread.interrupt();
         }
     }
+
+    private void allowCleartextForHost(String host) {
+            try {
+                Class<?> nspClass = Class.forName("android.security.NetworkSecurityPolicy");
+                Method getInstanceMethod = nspClass.getMethod("getInstance");
+                Object nspInstance = getInstanceMethod.invoke(null);
+
+                Class<?> strictModeVmPolicyClass = Class.forName("android.os.StrictMode$VmPolicy");
+                Method allowCleartextMethod = nspClass.getMethod("setCleartextTrafficPermitted", String.class, boolean.class);
+                allowCleartextMethod.invoke(nspInstance, host, true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+    }
+
 }
