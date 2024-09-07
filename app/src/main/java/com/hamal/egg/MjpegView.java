@@ -13,6 +13,9 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import androidx.annotation.NonNull;
+
+import com.hamal.egg.ui.dashboard.DashboardViewModel;
+
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,8 +47,9 @@ public class MjpegView extends SurfaceView{
     Exception last_thread_exception = null;
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
+    String m_url_end = null;
+    DashboardViewModel ip_provider = null;
 
-    private URL url = null;
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
         recording_handler = new RecordingHandler(context);
@@ -68,7 +72,7 @@ public class MjpegView extends SurfaceView{
         });
     }
 
-    public void prepare_connection() throws IOException {
+    public void prepare_connection(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoInput(true);
         connection.setConnectTimeout(300);
@@ -198,7 +202,15 @@ public class MjpegView extends SurfaceView{
         for(int i = 0;; i++) {
             startTether(); // check that tethering is on
             try {
-                prepare_connection();
+                String url_string = "http://" + ip_provider.get_ip() + m_url_end;
+                URL url;
+                try {
+                    url = new URL(url_string);
+                } catch (MalformedURLException e) {
+                    Log.e("startPlayback", "Bad url given:" + url_string);
+                    return;
+                }
+                prepare_connection(url);
                 run_loop();
             }
             catch (Exception e){
@@ -212,13 +224,9 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(String url_string) {
-        try {
-            url = new URL(url_string);
-        } catch (MalformedURLException e) {
-            Log.e("startPlayback", "Bad url given:" + url_string);
-            return;
-        }
+    public void startPlayback(DashboardViewModel model, String url_end) {
+        m_url_end = url_end;
+        ip_provider = model;
         thread = new Thread(this::connect);
         is_run = true;
         thread.start();

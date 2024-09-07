@@ -33,14 +33,9 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        try {
-            ip = model.get_ip();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        binding.cam1.startPlayback("http://" + ip + ":8008/stream.mjpg");
-        binding.cam2.startPlayback("http://" + ip + ":9800/stream.mjpg");
-        binding.cam3.startPlayback("http://" + ip + ":9801/stream.mjpg");
+        binding.cam1.startPlayback(model, ":8008/stream.mjpg");
+        binding.cam2.startPlayback(model, ":9800/stream.mjpg");
+        binding.cam3.startPlayback(model, ":9801/stream.mjpg");
     }
     @Override
     public void onDestroyView() {
