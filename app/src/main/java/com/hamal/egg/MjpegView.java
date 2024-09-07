@@ -7,16 +7,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 //import android.net.TetheringManager;
-
-import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import androidx.annotation.NonNull;
-
 import com.hamal.egg.ui.dashboard.DashboardViewModel;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +32,7 @@ public class MjpegView extends SurfaceView{
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     private final String CONTENT_LENGTH = "Content-Length: ";
     Thread thread = null;
+    HttpURLConnection connection = null;
     boolean is_run = false;
     boolean is_recording;
     Rect dest_rect = null;
@@ -50,6 +47,7 @@ public class MjpegView extends SurfaceView{
     String m_url_end = null;
     DashboardViewModel ip_provider = null;
     Paint fpsPaint = null;
+    boolean reconnect_mode = false;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -76,14 +74,20 @@ public class MjpegView extends SurfaceView{
             }
         });
     }
+    public void actually_connect() throws IOException {
+        connection.connect();
+        data_input = new DataInputStream(connection.getInputStream());
+
+    }
 
     public void prepare_connection(URL url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection = (HttpURLConnection) url.openConnection();
         connection.setDoInput(true);
         connection.setConnectTimeout(300);
         connection.setReadTimeout(300);
-        connection.connect();
-        data_input = new DataInputStream(connection.getInputStream());
+        if (!reconnect_mode){
+            actually_connect();
+        }
     }
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
@@ -143,12 +147,27 @@ public class MjpegView extends SurfaceView{
         while(is_run){
             int bytesRead = 0;
             try {
+                if (reconnect_mode){
+                    actually_connect();
+                }
                 bytesRead = read_frame();
                 assert (bytesRead > 0);
             }
+
             catch (IOException e){
                 read_exception = e;
                 frame_paint.setColor(Color.RED);
+            }
+            finally {
+                if (reconnect_mode) {
+                    if (data_input != null) try {
+                        data_input.close();
+                    } catch (IOException e) {
+                    }
+                    if (connection != null) {
+                        connection.disconnect();
+                    }
+                }
             }
             if (read_exception == null) {
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
