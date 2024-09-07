@@ -29,14 +29,11 @@ public class DashboardViewModel extends ViewModel {
                 String receivedString = new String(packet.getData(), 0, packet.getLength());
                 synchronized (lock) {
                     latestReceivedString = receivedString;
-                    if (!firstUpdateReceived) {
-                        firstUpdateReceived = true;
-                        lock.notifyAll(); // Notify all waiting threads
-                    }
+                    lock.notifyAll(); // Notify all waiting threads
                 }
             }
         } catch (IOException e) {
-            // Handle exception
+            throw new RuntimeException(e);
         }
     }
 
