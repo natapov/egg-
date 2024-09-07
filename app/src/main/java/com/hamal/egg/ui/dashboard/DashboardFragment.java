@@ -23,12 +23,12 @@ public class DashboardFragment extends Fragment {
         binding.recordButton3.setOnClickListener(n -> {
             binding.recordButton3.setSelected(binding.cam3.toggleRecording());
         });
-        model.Start();
         return binding.getRoot();
     }
     @Override
     public void onResume() {
         super.onResume();
+        model.Start();
         binding.cam1.startPlayback(model, ":8008/stream.mjpg");
         binding.cam2.startPlayback(model, ":9800/stream.mjpg");
         binding.cam3.startPlayback(model, ":9801/stream.mjpg");

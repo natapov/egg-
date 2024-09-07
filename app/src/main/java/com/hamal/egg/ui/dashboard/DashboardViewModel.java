@@ -1,10 +1,9 @@
 package com.hamal.egg.ui.dashboard;
 
-import android.os.Build;
+import android.util.Log;
 
 import androidx.lifecycle.ViewModel;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
@@ -13,7 +12,7 @@ public class DashboardViewModel extends ViewModel {
     private Thread thread = null;
     private volatile String latestReceivedString = null;
     private final Object lock = new Object();
-
+    private boolean running = true;
     public void Start() {
         thread = new Thread(this::listen_for_ip);
         thread.start();
@@ -22,18 +21,17 @@ public class DashboardViewModel extends ViewModel {
     public void listen_for_ip() {
         try (DatagramSocket socket = new DatagramSocket(UDP_PORT)) {
             byte[] buffer = new byte[1024];
-            while (true) {
+            while (running) {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String receivedString = new String(packet.getData(), 0, packet.getLength());
-               // allowCleartextForHost(receivedString);
                 synchronized (lock) {
                     latestReceivedString = receivedString;
                     lock.notifyAll(); // Notify all waiting threads
                 }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            Log.e("kuku", "error", e);
         }
     }
 
@@ -50,23 +48,11 @@ public class DashboardViewModel extends ViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        if (thread != null) {
-            thread.interrupt();
+        running = false;
+        if (thread != null) try{
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
-
-    private void allowCleartextForHost(String host) {
-            try {
-                Class<?> nspClass = Class.forName("android.security.NetworkSecurityPolicy");
-                Method getInstanceMethod = nspClass.getMethod("getInstance");
-                Object nspInstance = getInstanceMethod.invoke(null);
-
-                Class<?> strictModeVmPolicyClass = Class.forName("android.os.StrictMode$VmPolicy");
-                Method allowCleartextMethod = nspClass.getMethod("setCleartextTrafficPermitted", String.class, boolean.class);
-                allowCleartextMethod.invoke(nspInstance, host, true);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-    }
-
 }
