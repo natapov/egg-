@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 //import android.net.TetheringManager;
 
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -49,12 +50,17 @@ public class MjpegView extends SurfaceView{
     DataInputStream data_input = null;
     String m_url_end = null;
     DashboardViewModel ip_provider = null;
+    Paint fpsPaint = null;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
         recording_handler = new RecordingHandler(context);
         options.inMutable = true;
         holder = this.getHolder();
+//        fpsPaint = new Paint();
+//        fpsPaint.setTextAlign(Paint.Align.LEFT);
+//        fpsPaint.setTextSize(12);
+//        fpsPaint.setTypeface(Typeface.DEFAULT);
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -108,6 +114,18 @@ public class MjpegView extends SurfaceView{
         final int y = (getHeight() / 2) - (bmh / 2);
         return new Rect(x, y, bmw + x, bmh + y);
     }
+    private Bitmap makeFpsOverlay(Paint p, String text) {
+        Rect b = new Rect();
+        p.getTextBounds(text, 0, text.length(), b);
+        final int bwidth = b.width() + 2;
+        final int bheight = b.height() + 2;
+        Bitmap bm = Bitmap.createBitmap(bwidth, bheight, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bm);
+        c.drawRect(0, 0, bwidth, bheight, p);
+        c.drawText(text, -b.left + 1,
+                ((float) bheight / 2) - ((p.ascent() + p.descent()) / 2) + 1, p);
+        return bm;
+    }
     public void run_loop() throws Exception {
         boolean first_frame = true;
         Canvas canvas = null;
@@ -116,6 +134,9 @@ public class MjpegView extends SurfaceView{
         frame_paint.setStyle(Paint.Style.STROKE);
         frame_paint.setStrokeWidth(stroke_width);
         Exception read_exception = null;
+        int frameCounter = 0;
+        Bitmap ovl = null;
+
         while(is_run){
             int bytesRead = 0;
             try {
@@ -147,6 +168,22 @@ public class MjpegView extends SurfaceView{
                         frame_paint);
                 if(!first_frame) {
                     canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+                }
+                if (false) {
+                    // p.setXfermode(mode);
+                    if (ovl != null) {
+                        int height = dest_rect.bottom - ovl.getHeight();
+                        int width = dest_rect.right - ovl.getWidth();
+                        canvas.drawBitmap(ovl, width, height, null);
+                    }
+                    // p.setXfermode(null);
+                    frameCounter++;
+                    if (true) {//((System.currentTimeMillis() - start) >= 1000) {
+                        //fps = frameCounter + "fps";
+                        frameCounter = 0;
+                        //start = System.currentTimeMillis();
+                        ovl = makeFpsOverlay(fpsPaint, "1122");
+                    }
                 }
             }
             finally {
