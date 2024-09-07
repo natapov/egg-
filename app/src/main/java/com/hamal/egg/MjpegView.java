@@ -203,7 +203,7 @@ public class MjpegView extends SurfaceView{
                     recorded_frames += 1;
                 }
                 catch (Exception recording_e){
-                    Log.e("recording", recording_e.toString());
+                    Log.e("recording", "exception occurred", recording_e);
                 }
             }
         }
@@ -229,8 +229,7 @@ public class MjpegView extends SurfaceView{
                 recording_handler.stopRecording();
             }
             catch (IOException e){
-                Log.e("add a tag", e.toString());
-
+                Log.e("add a tag", "failed to stop recording", e);
             }
         }
         is_recording = false;
@@ -244,7 +243,7 @@ public class MjpegView extends SurfaceView{
                 try {
                     url = new URL(url_string);
                 } catch (MalformedURLException e) {
-                    Log.e("startPlayback", "Bad url given:" + url_string);
+                    Log.e("startPlayback", "Bad url given:" + url_string, e);
                     return;
                 }
                 prepare_connection(url);
@@ -252,7 +251,7 @@ public class MjpegView extends SurfaceView{
             }
             catch (Exception e){
                 last_thread_exception = e;
-                Log.e("Restarting draw loop", "got exception: " + Arrays.toString(e.getStackTrace()));
+                Log.e("Restarting draw loop", "got exception: ", e);
 
                 continue; // try again
             }
