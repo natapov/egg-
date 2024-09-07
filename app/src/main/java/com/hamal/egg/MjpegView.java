@@ -32,7 +32,6 @@ public class MjpegView extends SurfaceView{
     private final static int FRAME_MAX_LENGTH = 150000;
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
-    private static final int MAX_RETRIES_ON_CONNECT = 5;
     public byte[] frameBuffer = new byte[FRAME_MAX_LENGTH];
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     private final String CONTENT_LENGTH = "Content-Length: ";
@@ -57,10 +56,10 @@ public class MjpegView extends SurfaceView{
         recording_handler = new RecordingHandler(context);
         options.inMutable = true;
         holder = this.getHolder();
-//        fpsPaint = new Paint();
-//        fpsPaint.setTextAlign(Paint.Align.LEFT);
-//        fpsPaint.setTextSize(12);
-//        fpsPaint.setTypeface(Typeface.DEFAULT);
+        fpsPaint = new Paint();
+        fpsPaint.setTextAlign(Paint.Align.LEFT);
+        fpsPaint.setTextSize(12);
+
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -121,7 +120,11 @@ public class MjpegView extends SurfaceView{
         final int bheight = b.height() + 2;
         Bitmap bm = Bitmap.createBitmap(bwidth, bheight, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bm);
+        int overlayBackgroundColor = Color.DKGRAY;
+        p.setColor(overlayBackgroundColor);
         c.drawRect(0, 0, bwidth, bheight, p);
+        int overlayTextColor = Color.WHITE;
+        p.setColor(overlayTextColor);
         c.drawText(text, -b.left + 1,
                 ((float) bheight / 2) - ((p.ascent() + p.descent()) / 2) + 1, p);
         return bm;
@@ -134,9 +137,9 @@ public class MjpegView extends SurfaceView{
         frame_paint.setStyle(Paint.Style.STROKE);
         frame_paint.setStrokeWidth(stroke_width);
         Exception read_exception = null;
-        int frameCounter = 0;
         Bitmap ovl = null;
-
+        long last_print_time = 0;
+        int frame_count = 0;
         while(is_run){
             int bytesRead = 0;
             try {
@@ -151,7 +154,6 @@ public class MjpegView extends SurfaceView{
                 bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
                 if (first_frame) {
                     options.inBitmap = bm; //reuse bm after first time
-                    first_frame = false;
                 }
                 frame_paint.setColor(Color.GRAY);
             }
@@ -166,23 +168,23 @@ public class MjpegView extends SurfaceView{
                         dest_rect.right + frame_offset,
                         dest_rect.bottom + frame_offset,
                         frame_paint);
-                if(!first_frame) {
-                    canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
-                }
-                if (false) {
-                    // p.setXfermode(mode);
+                canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+                if (true) {
                     if (ovl != null) {
                         int height = dest_rect.bottom - ovl.getHeight();
                         int width = dest_rect.right - ovl.getWidth();
                         canvas.drawBitmap(ovl, width, height, null);
                     }
-                    // p.setXfermode(null);
-                    frameCounter++;
-                    if (true) {//((System.currentTimeMillis() - start) >= 1000) {
-                        //fps = frameCounter + "fps";
-                        frameCounter = 0;
-                        //start = System.currentTimeMillis();
-                        ovl = makeFpsOverlay(fpsPaint, "1122");
+                    frame_count++;
+
+                    long current_time = System.currentTimeMillis();
+                    long delta = current_time - last_print_time;
+                    if (delta >= 1000) {
+                        float actual_fps = frame_count/(delta/1000f);
+                        String fps_text = String.format("%.2f", actual_fps) + "fps";
+                        ovl = makeFpsOverlay(fpsPaint, fps_text);
+                        last_print_time = current_time;
+                        frame_count = 0;
                     }
                 }
             }
