@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import androidx.annotation.NonNull;
-import com.hamal.egg.ui.dashboard.DashboardViewModel;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +46,7 @@ public class MjpegView extends SurfaceView{
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
     String m_url_end = null;
-    DashboardViewModel ip_provider = null;
+    MainActivity ip_provider = null;
     Paint fpsPaint = null;
     boolean reconnect_mode = true;
 
@@ -172,7 +171,7 @@ public class MjpegView extends SurfaceView{
                 canvas = holder.lockCanvas();
                 if (canvas == null) {
                     Log.w("draw thread", "null canvas, skipping render");
-                    continue;
+                    throw new Exception("canvas problem");
                 }
                 canvas.drawRect(dest_rect.left - frame_offset,
                         dest_rect.top - frame_offset,
@@ -274,7 +273,7 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(DashboardViewModel model, String url_end) {
+    public void startPlayback(MainActivity model, String url_end) {
         m_url_end = url_end;
         ip_provider = model;
         thread = new Thread(this::connect);

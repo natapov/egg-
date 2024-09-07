@@ -5,11 +5,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+
+import com.hamal.egg.MainActivity;
 import com.hamal.egg.databinding.CameraViewBinding;
 
 public class DashboardFragment extends Fragment {
     private CameraViewBinding binding;
-    private final DashboardViewModel model = new DashboardViewModel();
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
@@ -28,10 +29,12 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        model.Start();
-        binding.cam1.startPlayback(model, ":8008/stream.mjpg");
-        binding.cam2.startPlayback(model, ":9800/stream.mjpg");
-        binding.cam3.startPlayback(model, ":9801/stream.mjpg");
+        MainActivity activity = (MainActivity) getContext();
+        assert activity != null;
+        activity.Start();
+        binding.cam1.startPlayback(activity, ":8008/stream.mjpg");
+        binding.cam2.startPlayback(activity, ":9800/stream.mjpg");
+        binding.cam3.startPlayback(activity, ":9801/stream.mjpg");
     }
     @Override
     public void onDestroyView() {
