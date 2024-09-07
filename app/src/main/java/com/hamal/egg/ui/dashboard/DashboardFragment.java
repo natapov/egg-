@@ -5,15 +5,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-
-import com.hamal.egg.MainActivity;
 import com.hamal.egg.databinding.CameraViewBinding;
 
 public class DashboardFragment extends Fragment {
     private CameraViewBinding binding;
     private final DashboardViewModel model = new DashboardViewModel();
-    String ip = null;
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);

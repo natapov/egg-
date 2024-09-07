@@ -10,10 +10,6 @@ public class DashboardViewModel extends ViewModel {
     private Thread thread = null;
     private volatile String latestReceivedString = null;
     private final Object lock = new Object();
-    private boolean firstUpdateReceived = false;
-
-    public DashboardViewModel() {
-    }
 
     public void Start() {
         thread = new Thread(this::listen_for_ip);
