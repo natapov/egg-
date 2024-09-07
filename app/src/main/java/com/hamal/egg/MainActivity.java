@@ -3,13 +3,11 @@ package com.hamal.egg;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 import com.hamal.egg.databinding.ActivityMainBinding;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
@@ -43,8 +41,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("kuku", "error", e);
         } finally {
-            if (socket != null && !socket.isClosed()) {
+            try {
                 socket.close();
+            }catch (Exception e) {
+                Log.e("kuku", "error", e);
             }
         }
     }
@@ -67,6 +67,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);
+        Start();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (thread == null){
+            Start();
+        }
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        running = false;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
     }
 
     @Override
@@ -75,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         running = false;
         if (thread != null) {
             thread.interrupt();
+            thread = null;
         }
     }
 }

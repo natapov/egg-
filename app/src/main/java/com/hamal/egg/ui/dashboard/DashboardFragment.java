@@ -31,7 +31,6 @@ public class DashboardFragment extends Fragment {
         super.onResume();
         MainActivity activity = (MainActivity) getContext();
         assert activity != null;
-        activity.Start();
         binding.cam1.startPlayback(activity, ":8008/stream.mjpg");
         binding.cam2.startPlayback(activity, ":9800/stream.mjpg");
         binding.cam3.startPlayback(activity, ":9801/stream.mjpg");
