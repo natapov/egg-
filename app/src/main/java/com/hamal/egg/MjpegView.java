@@ -39,6 +39,8 @@ public class MjpegView extends SurfaceView{
     static final int default_width = 640;
     static final int default_height= 360;
     Bitmap bm;
+    URL url;
+
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
@@ -47,7 +49,7 @@ public class MjpegView extends SurfaceView{
     String m_url_end = null;
     DashboardViewModel ip_provider = null;
     Paint fpsPaint = null;
-    boolean reconnect_mode = false;
+    boolean reconnect_mode = true;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -74,20 +76,14 @@ public class MjpegView extends SurfaceView{
             }
         });
     }
-    public void actually_connect() throws IOException {
-        connection.connect();
-        data_input = new DataInputStream(connection.getInputStream());
-
-    }
-
-    public void prepare_connection(URL url) throws IOException {
+    public void prepare_connection() throws IOException {
         connection = (HttpURLConnection) url.openConnection();
         connection.setDoInput(true);
         connection.setConnectTimeout(300);
         connection.setReadTimeout(300);
-        if (!reconnect_mode){
-            actually_connect();
-        }
+        connection.connect();
+        data_input = new DataInputStream(connection.getInputStream());
+
     }
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
@@ -148,12 +144,11 @@ public class MjpegView extends SurfaceView{
             int bytesRead = 0;
             try {
                 if (reconnect_mode){
-                    actually_connect();
+                    prepare_connection();
                 }
                 bytesRead = read_frame();
                 assert (bytesRead > 0);
             }
-
             catch (IOException e){
                 read_exception = e;
                 frame_paint.setColor(Color.RED);
@@ -163,9 +158,6 @@ public class MjpegView extends SurfaceView{
                     if (data_input != null) try {
                         data_input.close();
                     } catch (IOException e) {
-                    }
-                    if (connection != null) {
-                        connection.disconnect();
                     }
                 }
             }
@@ -260,14 +252,15 @@ public class MjpegView extends SurfaceView{
             startTether(); // check that tethering is on
             try {
                 String url_string = "http://" + ip_provider.get_ip() + m_url_end;
-                URL url;
                 try {
                     url = new URL(url_string);
                 } catch (MalformedURLException e) {
                     Log.e("startPlayback", "Bad url given:" + url_string, e);
                     return;
                 }
-                prepare_connection(url);
+                if (!reconnect_mode) {
+                    prepare_connection();
+                }
                 run_loop();
             }
             catch (Exception e){
