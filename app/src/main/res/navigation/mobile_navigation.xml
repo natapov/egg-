@@ -22,4 +22,12 @@
         app:launchSingleTop="true"
         app:popUpTo="@id/navigation_notifications"
         app:popUpToInclusive="true" />
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.hamal.egg.SettingsFragment"
+        android:label="@string/title_notifications"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/navigation_settings"
+        app:popUpToInclusive="true" />
 </navigation>
