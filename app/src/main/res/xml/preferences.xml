@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="General Settings">
+        <SwitchPreference
+            android:key="notifications"
+            android:title="Enable Notifications"
+            android:summary="Turn on or off notifications"
+            android:defaultValue="true" />
+
+        <EditTextPreference
+            android:key="username"
+            android:title="Username"
+            android:summary="Enter your username"
+            android:defaultValue="User" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Advanced Settings">
+<!--        <ListPreference-->
+<!--            android:key="update_interval"-->
+<!--            android:title="Update Interval"-->
+<!--            android:summary="Select how often to check for updates"-->
+<!--            android:entries="@array/update_intervals"-->
+<!--            android:entryValues="@array/update_interval_values"-->
+<!--            android:defaultValue="3600000" />-->
+
+        <Preference
+            android:key="version"
+            android:title="App Version"
+            android:summary="1.0.0" />
+    </PreferenceCategory>
+</PreferenceScreen>
