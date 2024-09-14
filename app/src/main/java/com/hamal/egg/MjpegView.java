@@ -1,5 +1,6 @@
 package com.hamal.egg;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -12,6 +13,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import androidx.annotation.NonNull;
+import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +50,7 @@ public class MjpegView extends SurfaceView{
     String m_url_end = null;
     MainActivity ip_provider = null;
     Paint fpsPaint = null;
-    boolean reconnect_mode = true;
+    SharedPreferences sharedPreferences = null;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -58,6 +60,8 @@ public class MjpegView extends SurfaceView{
         fpsPaint = new Paint();
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+
 
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -142,7 +146,7 @@ public class MjpegView extends SurfaceView{
         while(is_run){
             int bytesRead = 0;
             try {
-                if (reconnect_mode){
+                if (sharedPreferences.getBoolean("reconnect_mode", true)){
                     prepare_connection();
                 }
                 bytesRead = read_frame();
@@ -153,7 +157,7 @@ public class MjpegView extends SurfaceView{
                 frame_paint.setColor(Color.RED);
             }
             finally {
-                if (reconnect_mode) {
+                if (sharedPreferences.getBoolean("reconnect_mode", true)) {
                     if (data_input != null) try {
                         data_input.close();
                     } catch (IOException e) {
@@ -257,7 +261,7 @@ public class MjpegView extends SurfaceView{
                     Log.e("startPlayback", "Bad url given:" + url_string, e);
                     return;
                 }
-                if (!reconnect_mode) {
+                if (!sharedPreferences.getBoolean("reconnect_mode", true)) {
                     prepare_connection();
                 }
                 run_loop();

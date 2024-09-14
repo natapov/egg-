@@ -3,10 +3,10 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="General Settings">
         <SwitchPreference
-            android:key="notifications"
-            android:title="Enable Notifications"
-            android:summary="Turn on or off notifications"
-            android:defaultValue="true" />
+            android:key="reconnect_mode"
+            android:title="Connection mode"
+            android:summary="Reconnects every frame when on"
+            android:defaultValue="false" />
 
         <EditTextPreference
             android:key="username"
