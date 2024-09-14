@@ -25,8 +25,9 @@
 <!--            android:defaultValue="3600000" />-->
 
         <Preference
-            android:key="version"
-            android:title="App Version"
-            android:summary="1.0.0" />
+            android:key="egg_ip"
+            android:title="Egg ip"
+            android:summary="Loading..." />
+
     </PreferenceCategory>
 </PreferenceScreen>
