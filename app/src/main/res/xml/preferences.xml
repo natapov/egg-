@@ -8,11 +8,11 @@
             android:summary="Reconnects every frame when on"
             android:defaultValue="false" />
 
-        <EditTextPreference
-            android:key="username"
-            android:title="Username"
-            android:summary="Enter your username"
-            android:defaultValue="User" />
+        <SwitchPreference
+            android:key="record_all"
+            android:title="Record all"
+            android:summary="Always record all cameras when on"
+            android:defaultValue="false" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Advanced Settings">
