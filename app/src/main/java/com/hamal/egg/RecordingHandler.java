@@ -15,59 +15,36 @@ import java.util.Date;
 public class RecordingHandler {
     private static final String TAG = "MjpegRecordingHandler";
     private final Context context;
-    private DataOutputStream dos;
     public RecordingHandler(Context context) {
         this.context = context;
     }
-
+    int frames = 20;
+    MJPEGGenerator m = null;
     /**
      * Start recording the live image.
      */
     public void startRecording() {
         try {
-            String mjpegFilePath = createSavingFile("video", "mjpeg").getAbsolutePath();
-            FileOutputStream fos = new FileOutputStream(mjpegFilePath);
-            dos = new DataOutputStream(fos);
+            File mjpegFilePath = createSavingFile("video", "avi");
+            m = new MJPEGGenerator(mjpegFilePath, 640, 480, 12.0, frames);
             Toast.makeText(context, "start recording, file path is:" + mjpegFilePath, Toast.LENGTH_LONG).show();
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, e.getMessage());
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
     /**
      * Stop recording the live image.
      */
-    public void stopRecording() throws IOException {
-        dos.flush();
-        dos.close();
+    public void stopRecording() throws Exception {
+        m.finishAVI();
     }
-
-    /**
-     * Save the last acquired bitmap into a JPEG file.
-     */
-//    public void saveBitmapToFile() {
-//        FileOutputStream fos;
-//        BufferedOutputStream bos;
-//        String imagePath = createJpgFile().getAbsolutePath();
-//        try {
-//            fos = new FileOutputStream(imagePath);
-//            bos = new BufferedOutputStream(fos);
-//            ByteArrayOutputStream jpegByteArrayOutputStream = new ByteArrayOutputStream();
-//            lastBitmap.compress(Bitmap.CompressFormat.JPEG, 75, jpegByteArrayOutputStream);
-//            byte[] jpegByteArray = jpegByteArrayOutputStream.toByteArray();
-//            bos.write(jpegByteArray);
-//            bos.flush();
-//            Toast.makeText(context, "saved image:" + imagePath, Toast.LENGTH_LONG).show();
-//        } catch (IOException e) {
-//            Log.e(TAG, e.getMessage());
-//        }
-//    }
 
     private File createSavingFile(String prefix, String extension) {
         Date date = new Date();
 
         @SuppressLint("SimpleDateFormat")
-        SimpleDateFormat sdf = new SimpleDateFormat("ddMMyy-HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd_MM_yy_HH:mm:ss");
         String szFileName = prefix + "-" + sdf.format(date);
         try {
             String path = context.getExternalFilesDir(null).getPath() + "/" + szFileName + "." + extension;
@@ -85,11 +62,9 @@ public class RecordingHandler {
 
     public void capture_frame(byte[] bitmap, int bitmap_size, byte[] header, int header_size) {
         try {
-            dos.write(header,0, header_size);
-            dos.write(bitmap,0, bitmap_size);
-            dos.flush();
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
+            m.addImage(bitmap);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 }

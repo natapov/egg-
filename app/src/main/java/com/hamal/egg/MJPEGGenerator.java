@@ -24,8 +24,7 @@ import java.util.Arrays;
  *
  * @author monceaux
  */
-public class MJPEGGenerator
-{
+public class MJPEGGenerator {
     /*
      *  Info needed for MJPEG AVI
      *
@@ -46,9 +45,10 @@ public class MJPEGGenerator
 
     AVIIndexList indexlist = null;
 
-    /** Creates a new instance of MJPEGGenerator */
-    public MJPEGGenerator(File aviFile, int width, int height, double framerate, int numFrames) throws Exception
-    {
+    /**
+     * Creates a new instance of MJPEGGenerator
+     */
+    public MJPEGGenerator(File aviFile, int width, int height, double framerate, int numFrames) throws Exception {
         this.aviFile = aviFile;
         this.width = width;
         this.height = height;
@@ -69,38 +69,35 @@ public class MJPEGGenerator
         indexlist = new AVIIndexList();
     }
 
-    public void addImage(byte[] imagedata) throws Exception
-    {
-        byte[] fcc = new byte[]{'0','0','d','b'};
+    public void addImage(byte[] imagedata) throws Exception {
+        byte[] fcc = new byte[]{'0', '0', 'd', 'b'};
         int useLength = imagedata.length;
         long position = aviChannel.position();
-        int extra = (useLength+(int)position) % 4;
-        if(extra > 0)
+        int extra = (useLength + (int) position) % 4;
+        if (extra > 0)
             useLength = useLength + extra;
 
-        indexlist.addAVIIndex((int)position,useLength);
+        indexlist.addAVIIndex((int) position, useLength);
 
         aviOutput.write(fcc);
         aviOutput.write(intBytes(swapInt(useLength)));
         aviOutput.write(imagedata);
-        if(extra > 0)
-        {
-            for(int i = 0; i < extra; i++)
+        if (extra > 0) {
+            for (int i = 0; i < extra; i++)
                 aviOutput.write(0);
         }
     }
 
-    public void finishAVI() throws Exception
-    {
+    public void finishAVI() throws Exception {
         byte[] indexlistBytes = indexlist.toBytes();
         aviOutput.write(indexlistBytes);
         aviOutput.close();
         long size = aviFile.length();
         RandomAccessFile raf = new RandomAccessFile(aviFile, "rw");
         raf.seek(4);
-        raf.write(intBytes(swapInt((int)size - 8)));
-        raf.seek(aviMovieOffset+4);
-        raf.write(intBytes(swapInt((int)(size - 8 - aviMovieOffset - indexlistBytes.length))));
+        raf.write(intBytes(swapInt((int) size - 8)));
+        raf.seek(aviMovieOffset + 4);
+        raf.write(intBytes(swapInt((int) (size - 8 - aviMovieOffset - indexlistBytes.length))));
         raf.close();
     }
 
@@ -116,53 +113,46 @@ public class MJPEGGenerator
 //        // write 00db and image bytes...
 //    }
 
-    public static int swapInt(int v)
-    {
-        return  (v >>> 24) | (v << 24) |
+    public static int swapInt(int v) {
+        return (v >>> 24) | (v << 24) |
                 ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00);
     }
 
-    public static short swapShort(short v)
-    {
-        return (short)((v >>> 8) | (v << 8));
+    public static short swapShort(short v) {
+        return (short) ((v >>> 8) | (v << 8));
     }
 
-    public static byte[] intBytes(int i)
-    {
+    public static byte[] intBytes(int i) {
         byte[] b = new byte[4];
-        b[0] = (byte)(i >>> 24);
-        b[1] = (byte)((i >>> 16) & 0x000000FF);
-        b[2] = (byte)((i >>> 8) & 0x000000FF);
-        b[3] = (byte)(i & 0x000000FF);
+        b[0] = (byte) (i >>> 24);
+        b[1] = (byte) ((i >>> 16) & 0x000000FF);
+        b[2] = (byte) ((i >>> 8) & 0x000000FF);
+        b[3] = (byte) (i & 0x000000FF);
 
         return b;
     }
 
-    public static byte[] shortBytes(short i)
-    {
+    public static byte[] shortBytes(short i) {
         byte[] b = new byte[2];
-        b[0] = (byte)(i >>> 8);
-        b[1] = (byte)(i & 0x000000FF);
+        b[0] = (byte) (i >>> 8);
+        b[1] = (byte) (i & 0x000000FF);
 
         return b;
     }
 
-    private class RIFFHeader
-    {
-        public byte[] fcc = new byte[]{'R','I','F','F'};
+    private class RIFFHeader {
+        public byte[] fcc = new byte[]{'R', 'I', 'F', 'F'};
         public int fileSize = 0;
-        public byte[] fcc2 = new byte[]{'A','V','I',' '};
-        public byte[] fcc3 = new byte[]{'L','I','S','T'};
+        public byte[] fcc2 = new byte[]{'A', 'V', 'I', ' '};
+        public byte[] fcc3 = new byte[]{'L', 'I', 'S', 'T'};
         public int listSize = 200;
-        public byte[] fcc4 = new byte[]{'h','d','r','l'};
+        public byte[] fcc4 = new byte[]{'h', 'd', 'r', 'l'};
 
-        public RIFFHeader()
-        {
+        public RIFFHeader() {
 
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(fileSize)));
@@ -176,8 +166,7 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIMainHeader
-    {
+    private class AVIMainHeader {
         /*
          *
          FOURCC fcc;
@@ -195,12 +184,12 @@ public class MJPEGGenerator
     DWORD  dwReserved[4];
          */
 
-        public byte[] fcc = new byte[]{'a','v','i','h'};
+        public byte[] fcc = new byte[]{'a', 'v', 'i', 'h'};
         public int cb = 56;
         public int dwMicroSecPerFrame = 0; //  (1 / frames per sec) * 1,000,000
         public int dwMaxBytesPerSec = 10000000;
         public int dwPaddingGranularity = 0;
-        public int dwFlags =  65552;
+        public int dwFlags = 65552;
         public int dwTotalFrames = 0;  // replace with correct value
         public int dwInitialFrames = 0;
         public int dwStreams = 1;
@@ -209,16 +198,14 @@ public class MJPEGGenerator
         public int dwHeight = 0; // replace with correct value
         public int[] dwReserved = new int[4];
 
-        public AVIMainHeader()
-        {
-            dwMicroSecPerFrame = (int)((1.0/framerate)*1000000.0);
+        public AVIMainHeader() {
+            dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
             dwWidth = width;
             dwHeight = height;
             dwTotalFrames = numFrames;
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(cb)));
@@ -242,19 +229,16 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIStreamList
-    {
-        public byte[] fcc = new byte[]{'L','I','S','T'};
+    private class AVIStreamList {
+        public byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
         public int size = 124;
-        public byte[] fcc2 = new byte[]{'s','t','r','l'};
+        public byte[] fcc2 = new byte[]{'s', 't', 'r', 'l'};
 
-        public AVIStreamList()
-        {
+        public AVIStreamList() {
 
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(size)));
@@ -265,8 +249,7 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIStreamHeader
-    {
+    private class AVIStreamHeader {
         /*
          FOURCC fcc;
      DWORD  cb;
@@ -291,10 +274,10 @@ public class MJPEGGenerator
      }  rcFrame;
          */
 
-        public byte[] fcc = new byte[]{'s','t','r','h'};
+        public byte[] fcc = new byte[]{'s', 't', 'r', 'h'};
         public int cb = 64;
-        public byte[] fccType = new byte[]{'v','i','d','s'};
-        public byte[] fccHandler = new byte[]{'M','J','P','G'};
+        public byte[] fccType = new byte[]{'v', 'i', 'd', 's'};
+        public byte[] fccHandler = new byte[]{'M', 'J', 'P', 'G'};
         public int dwFlags = 0;
         public short wPriority = 0;
         public short wLanguage = 0;
@@ -311,14 +294,12 @@ public class MJPEGGenerator
         public int right = 0;
         public int bottom = 0;
 
-        public AVIStreamHeader()
-        {
-            dwScale = (int)((1.0/framerate)*1000000.0);
+        public AVIStreamHeader() {
+            dwScale = (int) ((1.0 / framerate) * 1000000.0);
             dwLength = numFrames;
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(cb)));
@@ -345,8 +326,7 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIStreamFormat
-    {
+    private class AVIStreamFormat {
         /*
          FOURCC fcc;
      DWORD  cb;
@@ -363,14 +343,14 @@ public class MJPEGGenerator
     DWORD  biClrImportant;
          */
 
-        public byte[] fcc = new byte[]{'s','t','r','f'};
+        public byte[] fcc = new byte[]{'s', 't', 'r', 'f'};
         public int cb = 40;
         public int biSize = 40; // same as cb
         public int biWidth = 0;
         public int biHeight = 0;
         public short biPlanes = 1;
         public short biBitCount = 24;
-        public byte[] biCompression = new byte[]{'M','J','P','G'};
+        public byte[] biCompression = new byte[]{'M', 'J', 'P', 'G'};
         public int biSizeImage = 0; // width x height in pixels
         public int biXPelsPerMeter = 0;
         public int biYPelsPerMeter = 0;
@@ -378,15 +358,13 @@ public class MJPEGGenerator
         public int biClrImportant = 0;
 
 
-        public AVIStreamFormat()
-        {
+        public AVIStreamFormat() {
             biWidth = width;
             biHeight = height;
             biSizeImage = width * height;
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(cb)));
@@ -407,20 +385,17 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIMovieList
-    {
-        public byte[] fcc = new byte[]{'L','I','S','T'};
+    private class AVIMovieList {
+        public byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
         public int listSize = 0;
-        public byte[] fcc2 = new byte[]{'m','o','v','i'};
+        public byte[] fcc2 = new byte[]{'m', 'o', 'v', 'i'};
         // 00db size jpg image data ...
 
-        public AVIMovieList()
-        {
+        public AVIMovieList() {
 
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(listSize)));
@@ -431,37 +406,31 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIIndexList
-    {
-        public byte[] fcc = new byte[]{'i','d','x','1'};
+    private class AVIIndexList {
+        public byte[] fcc = new byte[]{'i', 'd', 'x', '1'};
         public int cb = 0;
         public ArrayList ind = new ArrayList();
 
-        public AVIIndexList()
-        {
+        public AVIIndexList() {
 
         }
 
-        public void addAVIIndex(AVIIndex ai)
-        {
+        public void addAVIIndex(AVIIndex ai) {
             ind.add(ai);
         }
 
-        public void addAVIIndex(int dwOffset, int dwSize)
-        {
+        public void addAVIIndex(int dwOffset, int dwSize) {
             ind.add(new AVIIndex(dwOffset, dwSize));
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             cb = 16 * ind.size();
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(cb)));
-            for(int i = 0; i < ind.size(); i++)
-            {
-                AVIIndex in = (AVIIndex)ind.get(i);
+            for (int i = 0; i < ind.size(); i++) {
+                AVIIndex in = (AVIIndex) ind.get(i);
                 baos.write(in.toBytes());
             }
 
@@ -471,21 +440,18 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIIndex
-    {
-        public byte[] fcc = new byte[]{'0','0','d','b'};
+    private class AVIIndex {
+        public byte[] fcc = new byte[]{'0', '0', 'd', 'b'};
         public int dwFlags = 16;
         public int dwOffset = 0;
         public int dwSize = 0;
 
-        public AVIIndex(int dwOffset, int dwSize)
-        {
+        public AVIIndex(int dwOffset, int dwSize) {
             this.dwOffset = dwOffset;
             this.dwSize = dwSize;
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(dwFlags)));
@@ -497,19 +463,16 @@ public class MJPEGGenerator
         }
     }
 
-    private class AVIJunk
-    {
-        public byte[] fcc = new byte[]{'J','U','N','K'};
+    private class AVIJunk {
+        public byte[] fcc = new byte[]{'J', 'U', 'N', 'K'};
         public int size = 1808;
         public byte[] data = new byte[size];
 
-        public AVIJunk()
-        {
-            Arrays.fill(data,(byte)0);
+        public AVIJunk() {
+            Arrays.fill(data, (byte) 0);
         }
 
-        public byte[] toBytes() throws Exception
-        {
+        public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(size)));
@@ -519,17 +482,7 @@ public class MJPEGGenerator
             return baos.toByteArray();
         }
     }
-
-
-    public static void main(String[] args) throws Exception
-    {
-        double framerate = 12.0;
-
-
-        MJPEGGenerator m = new MJPEGGenerator(new File(args[1]), 640, 480, framerate, numFrames);
-        //m.addImage();
-        //
-        m.finishAVI();
-    }
-
 }
+
+
+

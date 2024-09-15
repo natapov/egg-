@@ -5,25 +5,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.MediaController;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
-
 import com.hamal.egg.R;
 import com.hamal.egg.databinding.FragmentVideoBinding;
 
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.MediaController;
 import android.widget.VideoView;
@@ -33,9 +25,7 @@ import androidx.fragment.app.Fragment;
 
 import java.io.File;
 
-public class NotificationsFragment extends Fragment {
-    private VideoView videoView = null;
-    private static final int READ_REQUEST_CODE = 42;
+public class NotificationsFragment extends Fragment { private static final int READ_REQUEST_CODE = 42;
 
     private FragmentVideoBinding binding;
     Uri current_video;
@@ -53,7 +43,6 @@ public class NotificationsFragment extends Fragment {
         Uri contentUri = FileProvider.getUriForFile(context, "com.hamal.egg.provider", f);
         intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(contentUri, "*/*");
-        videoView = new VideoView(context,);
         startActivityForResult(intent, READ_REQUEST_CODE);
         return root;
     }
@@ -67,23 +56,23 @@ public class NotificationsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        videoView.setVideoPath(current_video.getPath());
-
-        // Add media controls
-        MediaController mediaController = new MediaController(requireContext());
-        mediaController.setAnchorView(videoView);
-        videoView.setMediaController(mediaController);
-
-        // Start playing the video
-        videoView.start();
+//        videoView.setVideoPath(current_video.getPath());
+//
+//        // Add media controls
+//        MediaController mediaController = new MediaController(requireContext());
+//        mediaController.setAnchorView(videoView);
+//        videoView.setMediaController(mediaController);
+//
+//        // Start playing the video
+//        videoView.start();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (videoView != null && videoView.isPlaying()) {
-            videoView.pause();
-        }
+//        if (videoView != null && videoView.isPlaying()) {
+//            videoView.pause();
+//        }
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {

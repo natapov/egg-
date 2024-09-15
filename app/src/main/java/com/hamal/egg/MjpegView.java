@@ -244,7 +244,7 @@ public class MjpegView extends SurfaceView{
             try {
                 recording_handler.stopRecording();
             }
-            catch (IOException e){
+            catch (Exception e){
                 Log.e("add a tag", "failed to stop recording", e);
             }
         }
