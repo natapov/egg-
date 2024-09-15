@@ -36,7 +36,7 @@ public class DashboardFragment extends Fragment {
             }
         });
         binding.recordButton2.setOnClickListener(n -> {
-            boolean is_recording = binding.cam1.toggleRecording();
+            boolean is_recording = binding.cam2.toggleRecording();
             binding.recordButton2.setSelected(is_recording);
             if (sharedPreferences.getBoolean("record_all", true)) {
                 binding.recordButton1.setSelected(is_recording);
@@ -47,7 +47,7 @@ public class DashboardFragment extends Fragment {
             }
         });
         binding.recordButton3.setOnClickListener(n -> {
-            boolean is_recording = binding.cam1.toggleRecording();
+            boolean is_recording = binding.cam3.toggleRecording();
             binding.recordButton3.setSelected(is_recording);
             if (sharedPreferences.getBoolean("record_all", true)) {
                 binding.recordButton1.setSelected(is_recording);

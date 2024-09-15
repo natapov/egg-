@@ -51,7 +51,7 @@ public class MjpegView extends SurfaceView{
     MainActivity ip_provider = null;
     Paint fpsPaint = null;
     SharedPreferences sharedPreferences = null;
-
+    String cam_name;
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
         recording_handler = new RecordingHandler(context);
@@ -61,7 +61,7 @@ public class MjpegView extends SurfaceView{
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-
+        cam_name = getResources().getResourceEntryName(getId());
 
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -135,7 +135,6 @@ public class MjpegView extends SurfaceView{
     public void run_loop() throws Exception {
         boolean first_frame = true;
         Canvas canvas = null;
-        int recorded_frames = 0;
         Paint frame_paint = new Paint();
         frame_paint.setStyle(Paint.Style.STROKE);
         frame_paint.setStrokeWidth(stroke_width);
@@ -215,7 +214,6 @@ public class MjpegView extends SurfaceView{
             if (is_recording) {
                 try {
                     recording_handler.capture_frame(frameBuffer);
-                    recorded_frames += 1;
                 }
                 catch (Exception recording_e){
                     Log.e("recording", "exception occurred", recording_e);
@@ -230,7 +228,7 @@ public class MjpegView extends SurfaceView{
         if (is_recording != on) {
             is_recording = on;
             if (is_recording) {
-                recording_handler.startRecording();
+                recording_handler.startRecording(cam_name);
             } else {
                 recording_handler.stopRecording();
             }

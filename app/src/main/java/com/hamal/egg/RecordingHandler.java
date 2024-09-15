@@ -16,9 +16,9 @@ public class RecordingHandler {
         this.context = context;
     }
     MJPEGGenerator m = null;
-    public void startRecording() {
+    public void startRecording(String cam_name) {
         try {
-            File mjpegFilePath = createSavingFile("video", "avi");
+            File mjpegFilePath = createSavingFile(cam_name, "avi");
             m = new MJPEGGenerator(mjpegFilePath, 320, 180, 12.0, 0);
             Toast.makeText(context, "start recording, file path is:" + mjpegFilePath, Toast.LENGTH_LONG).show();
         } catch (Exception e) {
