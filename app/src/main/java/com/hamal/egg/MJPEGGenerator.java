@@ -41,7 +41,7 @@ public class MJPEGGenerator {
     }
 
     public void addImage(byte[] imageData) throws Exception {
-        byte[] fcc = new byte[]{'0', '0', 'd', 'b'};
+        byte[] fcc = {'0', '0', 'd', 'b'};
         int useLength = imageData.length;
         long position = aviChannel.position();
         int extra = (useLength + (int) position) % 4;
@@ -94,19 +94,19 @@ public class MJPEGGenerator {
     public static byte[] shortBytes(short i) {
         byte[] b = new byte[2];
         b[0] = (byte) (i >>> 8);
-        b[1] = (byte) (i & 0x000000FF);
+        b[1] =(byte) (i & 0x000000FF);
         return b;
     }
 
     void RIFFHeader(FileOutputStream fos) throws IOException {
-        byte[] fcc = new byte[]{'R', 'I', 'F', 'F'};
+        byte[] fcc1 = {'R', 'I', 'F', 'F'};
         int fileSize = 0;
-        byte[] fcc2 = new byte[]{'A', 'V', 'I', ' '};
-        byte[] fcc3 = new byte[]{'L', 'I', 'S', 'T'};
+        byte[] fcc2 = {'A', 'V', 'I', ' '};
+        byte[] fcc3 = {'L', 'I', 'S', 'T'};
         int listSize = 200;
-        byte[] fcc4 = new byte[]{'h', 'd', 'r', 'l'};
+        byte[] fcc4 = {'h', 'd', 'r', 'l'};
 
-        fos.write(fcc);
+        fos.write(fcc1);
         fos.write(intBytes(swapInt(fileSize)));
         fos.write(fcc2);
         fos.write(fcc3);
@@ -115,7 +115,7 @@ public class MJPEGGenerator {
     }
 
     void AVIMainHeader(FileOutputStream fos) throws IOException {
-        byte[] fcc = new byte[]{'a', 'v', 'i', 'h'};
+        byte[] fcc = {'a', 'v', 'i', 'h'};
         int cb = 56;
         int dwMicroSecPerFrame = 0; //  (1 / frames per sec) * 1,000,000
         int dwMaxBytesPerSec = 10000000;
@@ -146,9 +146,9 @@ public class MJPEGGenerator {
     }
 
     void AVIStreamList(FileOutputStream fos) throws IOException {
-        byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
+        byte[] fcc = {'L', 'I', 'S', 'T'};
         int size = 124;
-        byte[] fcc2 = new byte[]{'s', 't', 'r', 'l'};
+        byte[] fcc2 = {'s', 't', 'r', 'l'};
 
         fos.write(fcc);
         fos.write(intBytes(swapInt(size)));
@@ -157,10 +157,10 @@ public class MJPEGGenerator {
 
     void AVIStreamHeader(FileOutputStream fos) throws IOException {
 
-        byte[] fcc = new byte[]{'s', 't', 'r', 'h'};
+        byte[] fcc = {'s', 't', 'r', 'h'};
         int cb = 64;
-        byte[] fccType = new byte[]{'v', 'i', 'd', 's'};
-        byte[] fccHandler = new byte[]{'M', 'J', 'P', 'G'};
+        byte[] fccType = {'v', 'i', 'd', 's'};
+        byte[] fccHandler = {'M', 'J', 'P', 'G'};
         int dwFlags = 0;
         short wPriority = 0;
         short wLanguage = 0;
@@ -200,14 +200,14 @@ public class MJPEGGenerator {
     }
 
     void AVIStreamFormat(FileOutputStream fos) throws IOException {
-        byte[] fcc = new byte[]{'s', 't', 'r', 'f'};
+        byte[] fcc = {'s', 't', 'r', 'f'};
         int cb = 40;
         int biSize = 40; // same as cb
         int biWidth = 0;
         int biHeight = 0;
         short biPlanes = 1;
         short biBitCount = 24;
-        byte[] biCompression = new byte[]{'M', 'J', 'P', 'G'};
+        byte[] biCompression = {'M', 'J', 'P', 'G'};
         int biSizeImage = 0; // width x height in pixels
         int biXPelsPerMeter = 0;
         int biYPelsPerMeter = 0;
@@ -234,9 +234,9 @@ public class MJPEGGenerator {
     }
 
     void AVIMovieList(FileOutputStream fos) throws IOException {
-        byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
+        byte[] fcc = {'L', 'I', 'S', 'T'};
         int listSize = 0;
-        byte[] fcc2 = new byte[]{'m', 'o', 'v', 'i'};
+        byte[] fcc2 = {'m', 'o', 'v', 'i'};
         // 00db size jpg image data ...
 
         fos.write(fcc);
@@ -245,7 +245,7 @@ public class MJPEGGenerator {
     }
 
     private class AVIIndexList {
-        public byte[] fcc = new byte[]{'i', 'd', 'x', '1'};
+        public byte[] fcc = {'i', 'd', 'x', '1'};
         public int cb = 0;
         public ArrayList ind = new ArrayList();
 
@@ -277,7 +277,7 @@ public class MJPEGGenerator {
     }
 
     private class AVIIndex {
-        public byte[] fcc = new byte[]{'0', '0', 'd', 'b'};
+        public byte[] fcc = {'0', '0', 'd', 'b'};
         public int dwFlags = 16;
         public int dwOffset = 0;
         public int dwSize = 0;
@@ -299,7 +299,7 @@ public class MJPEGGenerator {
     }
 
     void AVIJunk(FileOutputStream fos) throws IOException{
-        byte[] fcc = new byte[]{'J', 'U', 'N', 'K'};
+        byte[] fcc = {'J', 'U', 'N', 'K'};
         int size = 1808;
         byte[] data = new byte[size];
         Arrays.fill(data, (byte) 0);
