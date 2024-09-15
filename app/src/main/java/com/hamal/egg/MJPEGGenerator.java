@@ -3,24 +3,13 @@ package com.hamal.egg;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-
-/**
- *
- * @author monceaux
- */
 public class MJPEGGenerator {
-    /*
-     *  Info needed for MJPEG AVI
-     *
-     *  - size of file minus "RIFF & 4 byte file size"
-     *
-     */
-
     int width = 0;
     int height = 0;
     int frameCount = 0;
@@ -40,14 +29,14 @@ public class MJPEGGenerator {
         aviOutput = new FileOutputStream(aviFile);
         aviChannel = aviOutput.getChannel();
 
-        aviOutput.write(new RIFFHeader().toBytes());
-        aviOutput.write(new AVIMainHeader().toBytes());
-        aviOutput.write(new AVIStreamList().toBytes());
-        aviOutput.write(new AVIStreamHeader().toBytes());
-        aviOutput.write(new AVIStreamFormat().toBytes());
-        aviOutput.write(new AVIJunk().toBytes());
+        aviOutput.write(RIFFHeader());
+        aviOutput.write(AVIMainHeader());
+        aviOutput.write(AVIStreamList());
+        aviOutput.write(AVIStreamHeader());
+        aviOutput.write(AVIStreamFormat());
+        aviOutput.write(AVIJunk());
         aviMovieOffset = aviChannel.position();
-        aviOutput.write(new AVIMovieList().toBytes());
+        aviOutput.write(AVIMovieList());
         indexlist = new AVIIndexList();
     }
 
@@ -110,207 +99,172 @@ public class MJPEGGenerator {
         return b;
     }
 
-    private class RIFFHeader {
-        public byte[] fcc = new byte[]{'R', 'I', 'F', 'F'};
-        public int fileSize = 0;
-        public byte[] fcc2 = new byte[]{'A', 'V', 'I', ' '};
-        public byte[] fcc3 = new byte[]{'L', 'I', 'S', 'T'};
-        public int listSize = 200;
-        public byte[] fcc4 = new byte[]{'h', 'd', 'r', 'l'};
+    private byte[] RIFFHeader() throws IOException {
+        byte[] fcc = new byte[]{'R', 'I', 'F', 'F'};
+        int fileSize = 0;
+        byte[] fcc2 = new byte[]{'A', 'V', 'I', ' '};
+        byte[] fcc3 = new byte[]{'L', 'I', 'S', 'T'};
+        int listSize = 200;
+        byte[] fcc4 = new byte[]{'h', 'd', 'r', 'l'};
 
-        public RIFFHeader() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(fileSize)));
+        baos.write(fcc2);
+        baos.write(fcc3);
+        baos.write(intBytes(swapInt(listSize)));
+        baos.write(fcc4);
+        baos.close();
 
-        }
-
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(fileSize)));
-            baos.write(fcc2);
-            baos.write(fcc3);
-            baos.write(intBytes(swapInt(listSize)));
-            baos.write(fcc4);
-            baos.close();
-
-            return baos.toByteArray();
-        }
+        return baos.toByteArray();
     }
 
-    private class AVIMainHeader {
+    private byte [] AVIMainHeader() throws IOException {
+        byte[] fcc = new byte[]{'a', 'v', 'i', 'h'};
+        int cb = 56;
+        int dwMicroSecPerFrame = 0; //  (1 / frames per sec) * 1,000,000
+        int dwMaxBytesPerSec = 10000000;
+        int dwPaddingGranularity = 0;
+        int dwFlags = 65552;
+        int dwInitialFrames = 0;
+        int dwStreams = 1;
+        int dwSuggestedBufferSize = 0;
+        int dwReserved = 0;
+        dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
 
-        public byte[] fcc = new byte[]{'a', 'v', 'i', 'h'};
-        public int cb = 56;
-        public int dwMicroSecPerFrame = 0; //  (1 / frames per sec) * 1,000,000
-        public int dwMaxBytesPerSec = 10000000;
-        public int dwPaddingGranularity = 0;
-        public int dwFlags = 65552;
-        public int dwInitialFrames = 0;
-        public int dwStreams = 1;
-        public int dwSuggestedBufferSize = 0;
-        public int dwWidth = 0;  // replace with correct value
-        public int dwHeight = 0; // replace with correct value
-        public int[] dwReserved = new int[4];
-
-        public AVIMainHeader() {
-            dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
-            dwWidth = width;
-            dwHeight = height;
-        }
-
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(cb)));
-            baos.write(intBytes(swapInt(dwMicroSecPerFrame)));
-            baos.write(intBytes(swapInt(dwMaxBytesPerSec)));
-            baos.write(intBytes(swapInt(dwPaddingGranularity)));
-            baos.write(intBytes(swapInt(dwFlags)));
-            baos.write(intBytes(swapInt(-1)));
-            baos.write(intBytes(swapInt(dwInitialFrames)));
-            baos.write(intBytes(swapInt(dwStreams)));
-            baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
-            baos.write(intBytes(swapInt(dwWidth)));
-            baos.write(intBytes(swapInt(dwHeight)));
-            baos.write(intBytes(swapInt(dwReserved[0])));
-            baos.write(intBytes(swapInt(dwReserved[1])));
-            baos.write(intBytes(swapInt(dwReserved[2])));
-            baos.write(intBytes(swapInt(dwReserved[3])));
-            baos.close();
-            return baos.toByteArray();
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(cb)));
+        baos.write(intBytes(swapInt(dwMicroSecPerFrame)));
+        baos.write(intBytes(swapInt(dwMaxBytesPerSec)));
+        baos.write(intBytes(swapInt(dwPaddingGranularity)));
+        baos.write(intBytes(swapInt(dwFlags)));
+        baos.write(intBytes(swapInt(-1)));
+        baos.write(intBytes(swapInt(dwInitialFrames)));
+        baos.write(intBytes(swapInt(dwStreams)));
+        baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
+        baos.write(intBytes(swapInt(width)));
+        baos.write(intBytes(swapInt(height)));
+        baos.write(intBytes(swapInt(dwReserved)));
+        baos.write(intBytes(swapInt(dwReserved)));
+        baos.write(intBytes(swapInt(dwReserved)));
+        baos.write(intBytes(swapInt(dwReserved)));
+        baos.close();
+        return baos.toByteArray();
     }
 
-    private class AVIStreamList {
-        public byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
-        public int size = 124;
-        public byte[] fcc2 = new byte[]{'s', 't', 'r', 'l'};
+    private byte [] AVIStreamList() throws IOException {
+        byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
+        int size = 124;
+        byte[] fcc2 = new byte[]{'s', 't', 'r', 'l'};
 
-        public AVIStreamList() {
-
-        }
-
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(size)));
-            baos.write(fcc2);
-            baos.close();
-            return baos.toByteArray();
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(size)));
+        baos.write(fcc2);
+        baos.close();
+        return baos.toByteArray();
     }
 
-    private class AVIStreamHeader {
+    private byte[] AVIStreamHeader() throws IOException {
 
-        public byte[] fcc = new byte[]{'s', 't', 'r', 'h'};
-        public int cb = 64;
-        public byte[] fccType = new byte[]{'v', 'i', 'd', 's'};
-        public byte[] fccHandler = new byte[]{'M', 'J', 'P', 'G'};
-        public int dwFlags = 0;
-        public short wPriority = 0;
-        public short wLanguage = 0;
-        public int dwInitialFrames = 0;
-        public int dwScale = 0; // microseconds per frame
-        public int dwRate = 1000000; // dwRate / dwScale = frame rate
-        public int dwStart = 0;
-        public int dwSuggestedBufferSize = 0;
-        public int dwQuality = -1;
-        public int dwSampleSize = 0;
-        public int left = 0;
-        public int top = 0;
-        public int right = 0;
-        public int bottom = 0;
+        byte[] fcc = new byte[]{'s', 't', 'r', 'h'};
+        int cb = 64;
+        byte[] fccType = new byte[]{'v', 'i', 'd', 's'};
+        byte[] fccHandler = new byte[]{'M', 'J', 'P', 'G'};
+        int dwFlags = 0;
+        short wPriority = 0;
+        short wLanguage = 0;
+        int dwInitialFrames = 0;
+        int dwScale = 0; // microseconds per frame
+        int dwRate = 1000000; // dwRate / dwScale = frame rate
+        int dwStart = 0;
+        int dwSuggestedBufferSize = 0;
+        int dwQuality = -1;
+        int dwSampleSize = 0;
+        int left = 0;
+        int top = 0;
+        int right = 0;
+        int bottom = 0;
 
-        public AVIStreamHeader() {
-            dwScale = (int) ((1.0 / framerate) * 1000000.0);
-        }
+        dwScale = (int) ((1.0 / framerate) * 1000000.0);
 
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(cb)));
-            baos.write(fccType);
-            baos.write(fccHandler);
-            baos.write(intBytes(swapInt(dwFlags)));
-            baos.write(shortBytes(swapShort(wPriority)));
-            baos.write(shortBytes(swapShort(wLanguage)));
-            baos.write(intBytes(swapInt(dwInitialFrames)));
-            baos.write(intBytes(swapInt(dwScale)));
-            baos.write(intBytes(swapInt(dwRate)));
-            baos.write(intBytes(swapInt(dwStart)));
-            baos.write(intBytes(swapInt(-1)));
-            baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
-            baos.write(intBytes(swapInt(dwQuality)));
-            baos.write(intBytes(swapInt(dwSampleSize)));
-            baos.write(intBytes(swapInt(left)));
-            baos.write(intBytes(swapInt(top)));
-            baos.write(intBytes(swapInt(right)));
-            baos.write(intBytes(swapInt(bottom)));
-            baos.close();
-            return baos.toByteArray();
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(cb)));
+        baos.write(fccType);
+        baos.write(fccHandler);
+        baos.write(intBytes(swapInt(dwFlags)));
+        baos.write(shortBytes(swapShort(wPriority)));
+        baos.write(shortBytes(swapShort(wLanguage)));
+        baos.write(intBytes(swapInt(dwInitialFrames)));
+        baos.write(intBytes(swapInt(dwScale)));
+        baos.write(intBytes(swapInt(dwRate)));
+        baos.write(intBytes(swapInt(dwStart)));
+        baos.write(intBytes(swapInt(-1)));
+        baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
+        baos.write(intBytes(swapInt(dwQuality)));
+        baos.write(intBytes(swapInt(dwSampleSize)));
+        baos.write(intBytes(swapInt(left)));
+        baos.write(intBytes(swapInt(top)));
+        baos.write(intBytes(swapInt(right)));
+        baos.write(intBytes(swapInt(bottom)));
+        baos.close();
+        return baos.toByteArray();
     }
 
-    private class AVIStreamFormat {
-        public byte[] fcc = new byte[]{'s', 't', 'r', 'f'};
-        public int cb = 40;
-        public int biSize = 40; // same as cb
-        public int biWidth = 0;
-        public int biHeight = 0;
-        public short biPlanes = 1;
-        public short biBitCount = 24;
-        public byte[] biCompression = new byte[]{'M', 'J', 'P', 'G'};
-        public int biSizeImage = 0; // width x height in pixels
-        public int biXPelsPerMeter = 0;
-        public int biYPelsPerMeter = 0;
-        public int biClrUsed = 0;
-        public int biClrImportant = 0;
+    private byte[] AVIStreamFormat() throws IOException {
+        byte[] fcc = new byte[]{'s', 't', 'r', 'f'};
+        int cb = 40;
+        int biSize = 40; // same as cb
+        int biWidth = 0;
+        int biHeight = 0;
+        short biPlanes = 1;
+        short biBitCount = 24;
+        byte[] biCompression = new byte[]{'M', 'J', 'P', 'G'};
+        int biSizeImage = 0; // width x height in pixels
+        int biXPelsPerMeter = 0;
+        int biYPelsPerMeter = 0;
+        int biClrUsed = 0;
+        int biClrImportant = 0;
 
-        public AVIStreamFormat() {
-            biWidth = width;
-            biHeight = height;
-            biSizeImage = width * height;
-        }
+        biWidth = width;
+        biHeight = height;
+        biSizeImage = width * height;
 
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(cb)));
-            baos.write(intBytes(swapInt(biSize)));
-            baos.write(intBytes(swapInt(biWidth)));
-            baos.write(intBytes(swapInt(biHeight)));
-            baos.write(shortBytes(swapShort(biPlanes)));
-            baos.write(shortBytes(swapShort(biBitCount)));
-            baos.write(biCompression);
-            baos.write(intBytes(swapInt(biSizeImage)));
-            baos.write(intBytes(swapInt(biXPelsPerMeter)));
-            baos.write(intBytes(swapInt(biYPelsPerMeter)));
-            baos.write(intBytes(swapInt(biClrUsed)));
-            baos.write(intBytes(swapInt(biClrImportant)));
-            baos.close();
 
-            return baos.toByteArray();
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(cb)));
+        baos.write(intBytes(swapInt(biSize)));
+        baos.write(intBytes(swapInt(biWidth)));
+        baos.write(intBytes(swapInt(biHeight)));
+        baos.write(shortBytes(swapShort(biPlanes)));
+        baos.write(shortBytes(swapShort(biBitCount)));
+        baos.write(biCompression);
+        baos.write(intBytes(swapInt(biSizeImage)));
+        baos.write(intBytes(swapInt(biXPelsPerMeter)));
+        baos.write(intBytes(swapInt(biYPelsPerMeter)));
+        baos.write(intBytes(swapInt(biClrUsed)));
+        baos.write(intBytes(swapInt(biClrImportant)));
+        baos.close();
+
+        return baos.toByteArray();
     }
 
-    private class AVIMovieList {
-        public byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
-        public int listSize = 0;
-        public byte[] fcc2 = new byte[]{'m', 'o', 'v', 'i'};
+    private byte[] AVIMovieList() throws IOException {
+        byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
+        int listSize = 0;
+        byte[] fcc2 = new byte[]{'m', 'o', 'v', 'i'};
         // 00db size jpg image data ...
 
-        public AVIMovieList() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(listSize)));
+        baos.write(fcc2);
+        baos.close();
 
-        }
-
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(listSize)));
-            baos.write(fcc2);
-            baos.close();
-
-            return baos.toByteArray();
-        }
+        return baos.toByteArray();
     }
 
     private class AVIIndexList {
@@ -321,7 +275,6 @@ public class MJPEGGenerator {
         public AVIIndexList() {
 
         }
-
         public void addAVIIndex(AVIIndex ai) {
             ind.add(ai);
         }
@@ -332,7 +285,6 @@ public class MJPEGGenerator {
 
         public byte[] toBytes() throws Exception {
             cb = 16 * ind.size();
-
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
             baos.write(intBytes(swapInt(cb)));
@@ -365,29 +317,22 @@ public class MJPEGGenerator {
             baos.write(intBytes(swapInt(dwOffset)));
             baos.write(intBytes(swapInt(dwSize)));
             baos.close();
-
             return baos.toByteArray();
         }
     }
 
-    private class AVIJunk {
-        public byte[] fcc = new byte[]{'J', 'U', 'N', 'K'};
-        public int size = 1808;
-        public byte[] data = new byte[size];
+    byte[] AVIJunk() throws IOException{
+        byte[] fcc = new byte[]{'J', 'U', 'N', 'K'};
+        int size = 1808;
+        byte[] data = new byte[size];
+        Arrays.fill(data, (byte) 0);
 
-        public AVIJunk() {
-            Arrays.fill(data, (byte) 0);
-        }
-
-        public byte[] toBytes() throws Exception {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(fcc);
-            baos.write(intBytes(swapInt(size)));
-            baos.write(data);
-            baos.close();
-
-            return baos.toByteArray();
-        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fcc);
+        baos.write(intBytes(swapInt(size)));
+        baos.write(data);
+        baos.close();
+        return baos.toByteArray();
     }
 }
 
