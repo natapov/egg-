@@ -29,14 +29,14 @@ public class MJPEGGenerator {
         aviOutput = new FileOutputStream(aviFile);
         aviChannel = aviOutput.getChannel();
 
-        aviOutput.write(RIFFHeader());
-        aviOutput.write(AVIMainHeader());
-        aviOutput.write(AVIStreamList());
-        aviOutput.write(AVIStreamHeader());
-        aviOutput.write(AVIStreamFormat());
-        aviOutput.write(AVIJunk());
+        RIFFHeader(aviOutput);
+        AVIMainHeader(aviOutput);
+        AVIStreamList(aviOutput);
+        AVIStreamHeader(aviOutput);
+        AVIStreamFormat(aviOutput);
+        AVIJunk(aviOutput);
         aviMovieOffset = aviChannel.position();
-        aviOutput.write(AVIMovieList());
+        AVIMovieList(aviOutput);
         indexlist = new AVIIndexList();
     }
 
@@ -75,8 +75,7 @@ public class MJPEGGenerator {
     }
 
     public static int swapInt(int v) {
-        return (v >>> 24) | (v << 24) |
-                ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00);
+        return (v >>> 24) | (v << 24) | ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00);
     }
 
     public static short swapShort(short v) {
@@ -99,7 +98,7 @@ public class MJPEGGenerator {
         return b;
     }
 
-    private byte[] RIFFHeader() throws IOException {
+    void RIFFHeader(FileOutputStream fos) throws IOException {
         byte[] fcc = new byte[]{'R', 'I', 'F', 'F'};
         int fileSize = 0;
         byte[] fcc2 = new byte[]{'A', 'V', 'I', ' '};
@@ -107,19 +106,15 @@ public class MJPEGGenerator {
         int listSize = 200;
         byte[] fcc4 = new byte[]{'h', 'd', 'r', 'l'};
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(fileSize)));
-        baos.write(fcc2);
-        baos.write(fcc3);
-        baos.write(intBytes(swapInt(listSize)));
-        baos.write(fcc4);
-        baos.close();
-
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(fileSize)));
+        fos.write(fcc2);
+        fos.write(fcc3);
+        fos.write(intBytes(swapInt(listSize)));
+        fos.write(fcc4);
     }
 
-    private byte [] AVIMainHeader() throws IOException {
+    void AVIMainHeader(FileOutputStream fos) throws IOException {
         byte[] fcc = new byte[]{'a', 'v', 'i', 'h'};
         int cb = 56;
         int dwMicroSecPerFrame = 0; //  (1 / frames per sec) * 1,000,000
@@ -132,41 +127,35 @@ public class MJPEGGenerator {
         int dwReserved = 0;
         dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(cb)));
-        baos.write(intBytes(swapInt(dwMicroSecPerFrame)));
-        baos.write(intBytes(swapInt(dwMaxBytesPerSec)));
-        baos.write(intBytes(swapInt(dwPaddingGranularity)));
-        baos.write(intBytes(swapInt(dwFlags)));
-        baos.write(intBytes(swapInt(-1)));
-        baos.write(intBytes(swapInt(dwInitialFrames)));
-        baos.write(intBytes(swapInt(dwStreams)));
-        baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
-        baos.write(intBytes(swapInt(width)));
-        baos.write(intBytes(swapInt(height)));
-        baos.write(intBytes(swapInt(dwReserved)));
-        baos.write(intBytes(swapInt(dwReserved)));
-        baos.write(intBytes(swapInt(dwReserved)));
-        baos.write(intBytes(swapInt(dwReserved)));
-        baos.close();
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(cb)));
+        fos.write(intBytes(swapInt(dwMicroSecPerFrame)));
+        fos.write(intBytes(swapInt(dwMaxBytesPerSec)));
+        fos.write(intBytes(swapInt(dwPaddingGranularity)));
+        fos.write(intBytes(swapInt(dwFlags)));
+        fos.write(intBytes(swapInt(-1)));
+        fos.write(intBytes(swapInt(dwInitialFrames)));
+        fos.write(intBytes(swapInt(dwStreams)));
+        fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
+        fos.write(intBytes(swapInt(width)));
+        fos.write(intBytes(swapInt(height)));
+        fos.write(intBytes(swapInt(dwReserved)));
+        fos.write(intBytes(swapInt(dwReserved)));
+        fos.write(intBytes(swapInt(dwReserved)));
+        fos.write(intBytes(swapInt(dwReserved)));
     }
 
-    private byte [] AVIStreamList() throws IOException {
+    void AVIStreamList(FileOutputStream fos) throws IOException {
         byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
         int size = 124;
         byte[] fcc2 = new byte[]{'s', 't', 'r', 'l'};
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(size)));
-        baos.write(fcc2);
-        baos.close();
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(size)));
+        fos.write(fcc2);
     }
 
-    private byte[] AVIStreamHeader() throws IOException {
+    void AVIStreamHeader(FileOutputStream fos) throws IOException {
 
         byte[] fcc = new byte[]{'s', 't', 'r', 'h'};
         int cb = 64;
@@ -189,31 +178,28 @@ public class MJPEGGenerator {
 
         dwScale = (int) ((1.0 / framerate) * 1000000.0);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(cb)));
-        baos.write(fccType);
-        baos.write(fccHandler);
-        baos.write(intBytes(swapInt(dwFlags)));
-        baos.write(shortBytes(swapShort(wPriority)));
-        baos.write(shortBytes(swapShort(wLanguage)));
-        baos.write(intBytes(swapInt(dwInitialFrames)));
-        baos.write(intBytes(swapInt(dwScale)));
-        baos.write(intBytes(swapInt(dwRate)));
-        baos.write(intBytes(swapInt(dwStart)));
-        baos.write(intBytes(swapInt(-1)));
-        baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
-        baos.write(intBytes(swapInt(dwQuality)));
-        baos.write(intBytes(swapInt(dwSampleSize)));
-        baos.write(intBytes(swapInt(left)));
-        baos.write(intBytes(swapInt(top)));
-        baos.write(intBytes(swapInt(right)));
-        baos.write(intBytes(swapInt(bottom)));
-        baos.close();
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(cb)));
+        fos.write(fccType);
+        fos.write(fccHandler);
+        fos.write(intBytes(swapInt(dwFlags)));
+        fos.write(shortBytes(swapShort(wPriority)));
+        fos.write(shortBytes(swapShort(wLanguage)));
+        fos.write(intBytes(swapInt(dwInitialFrames)));
+        fos.write(intBytes(swapInt(dwScale)));
+        fos.write(intBytes(swapInt(dwRate)));
+        fos.write(intBytes(swapInt(dwStart)));
+        fos.write(intBytes(swapInt(-1)));
+        fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
+        fos.write(intBytes(swapInt(dwQuality)));
+        fos.write(intBytes(swapInt(dwSampleSize)));
+        fos.write(intBytes(swapInt(left)));
+        fos.write(intBytes(swapInt(top)));
+        fos.write(intBytes(swapInt(right)));
+        fos.write(intBytes(swapInt(bottom)));
     }
 
-    private byte[] AVIStreamFormat() throws IOException {
+    void AVIStreamFormat(FileOutputStream fos) throws IOException {
         byte[] fcc = new byte[]{'s', 't', 'r', 'f'};
         int cb = 40;
         int biSize = 40; // same as cb
@@ -232,39 +218,30 @@ public class MJPEGGenerator {
         biHeight = height;
         biSizeImage = width * height;
 
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(cb)));
-        baos.write(intBytes(swapInt(biSize)));
-        baos.write(intBytes(swapInt(biWidth)));
-        baos.write(intBytes(swapInt(biHeight)));
-        baos.write(shortBytes(swapShort(biPlanes)));
-        baos.write(shortBytes(swapShort(biBitCount)));
-        baos.write(biCompression);
-        baos.write(intBytes(swapInt(biSizeImage)));
-        baos.write(intBytes(swapInt(biXPelsPerMeter)));
-        baos.write(intBytes(swapInt(biYPelsPerMeter)));
-        baos.write(intBytes(swapInt(biClrUsed)));
-        baos.write(intBytes(swapInt(biClrImportant)));
-        baos.close();
-
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(cb)));
+        fos.write(intBytes(swapInt(biSize)));
+        fos.write(intBytes(swapInt(biWidth)));
+        fos.write(intBytes(swapInt(biHeight)));
+        fos.write(shortBytes(swapShort(biPlanes)));
+        fos.write(shortBytes(swapShort(biBitCount)));
+        fos.write(biCompression);
+        fos.write(intBytes(swapInt(biSizeImage)));
+        fos.write(intBytes(swapInt(biXPelsPerMeter)));
+        fos.write(intBytes(swapInt(biYPelsPerMeter)));
+        fos.write(intBytes(swapInt(biClrUsed)));
+        fos.write(intBytes(swapInt(biClrImportant)));
     }
 
-    private byte[] AVIMovieList() throws IOException {
+    void AVIMovieList(FileOutputStream fos) throws IOException {
         byte[] fcc = new byte[]{'L', 'I', 'S', 'T'};
         int listSize = 0;
         byte[] fcc2 = new byte[]{'m', 'o', 'v', 'i'};
         // 00db size jpg image data ...
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(listSize)));
-        baos.write(fcc2);
-        baos.close();
-
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(listSize)));
+        fos.write(fcc2);
     }
 
     private class AVIIndexList {
@@ -321,18 +298,15 @@ public class MJPEGGenerator {
         }
     }
 
-    byte[] AVIJunk() throws IOException{
+    void AVIJunk(FileOutputStream fos) throws IOException{
         byte[] fcc = new byte[]{'J', 'U', 'N', 'K'};
         int size = 1808;
         byte[] data = new byte[size];
         Arrays.fill(data, (byte) 0);
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(fcc);
-        baos.write(intBytes(swapInt(size)));
-        baos.write(data);
-        baos.close();
-        return baos.toByteArray();
+        fos.write(fcc);
+        fos.write(intBytes(swapInt(size)));
+        fos.write(data);
     }
 }
 
