@@ -1,19 +1,8 @@
 package com.hamal.egg;
 
-/*
- * MJPEGGenerator.java
- *
- * Created on April 17, 2006, 11:48 PM
- *
- * To change this template, choose Tools | Options and locate the template under
- * the Source Creation and Management node. Right-click the template and choose
- * Open. You can then make changes to the template in the Source Editor.
- */
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -40,7 +29,6 @@ public class MJPEGGenerator {
     FileOutputStream aviOutput = null;
     FileChannel aviChannel = null;
 
-    long riffOffset = 0;
     long aviMovieOffset = 0;
 
     AVIIndexList indexlist = null;
@@ -101,18 +89,6 @@ public class MJPEGGenerator {
         raf.close();
     }
 
-//    public void writeAVI(File file) throws Exception
-//    {
-//        OutputStream os = new FileOutputStream(file);
-//
-//        // RIFFHeader
-//        // AVIMainHeader
-//        // AVIStreamList
-//        // AVIStreamHeader
-//        // AVIStreamFormat
-//        // write 00db and image bytes...
-//    }
-
     public static int swapInt(int v) {
         return (v >>> 24) | (v << 24) |
                 ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00);
@@ -167,22 +143,6 @@ public class MJPEGGenerator {
     }
 
     private class AVIMainHeader {
-        /*
-         *
-         FOURCC fcc;
-    DWORD  cb;
-    DWORD  dwMicroSecPerFrame;
-    DWORD  dwMaxBytesPerSec;
-    DWORD  dwPaddingGranularity;
-    DWORD  dwFlags;
-    DWORD  dwTotalFrames;
-    DWORD  dwInitialFrames;
-    DWORD  dwStreams;
-    DWORD  dwSuggestedBufferSize;
-    DWORD  dwWidth;
-    DWORD  dwHeight;
-    DWORD  dwReserved[4];
-         */
 
         public byte[] fcc = new byte[]{'a', 'v', 'i', 'h'};
         public int cb = 56;
@@ -250,29 +210,6 @@ public class MJPEGGenerator {
     }
 
     private class AVIStreamHeader {
-        /*
-         FOURCC fcc;
-     DWORD  cb;
-     FOURCC fccType;
-     FOURCC fccHandler;
-     DWORD  dwFlags;
-     WORD   wPriority;
-     WORD   wLanguage;
-     DWORD  dwInitialFrames;
-     DWORD  dwScale;
-     DWORD  dwRate;
-     DWORD  dwStart;
-     DWORD  dwLength;
-     DWORD  dwSuggestedBufferSize;
-     DWORD  dwQuality;
-     DWORD  dwSampleSize;
-     struct {
-         short int left;
-         short int top;
-         short int right;
-         short int bottom;
-     }  rcFrame;
-         */
 
         public byte[] fcc = new byte[]{'s', 't', 'r', 'h'};
         public int cb = 64;
@@ -327,22 +264,6 @@ public class MJPEGGenerator {
     }
 
     private class AVIStreamFormat {
-        /*
-         FOURCC fcc;
-     DWORD  cb;
-     DWORD  biSize;
-    LONG   biWidth;
-    LONG   biHeight;
-    WORD   biPlanes;
-    WORD   biBitCount;
-    DWORD  biCompression;
-    DWORD  biSizeImage;
-    LONG   biXPelsPerMeter;
-    LONG   biYPelsPerMeter;
-    DWORD  biClrUsed;
-    DWORD  biClrImportant;
-         */
-
         public byte[] fcc = new byte[]{'s', 't', 'r', 'f'};
         public int cb = 40;
         public int biSize = 40; // same as cb

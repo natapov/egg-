@@ -74,7 +74,7 @@ public class MjpegView extends SurfaceView{
             }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                stopRecording();
+                setRecording(false);
                 stopPlayback();
             }
         });
@@ -214,8 +214,7 @@ public class MjpegView extends SurfaceView{
 
             if (is_recording) {
                 try {
-                    String header = String.format("Frame: %d \r\n", recorded_frames);
-                    recording_handler.capture_frame(frameBuffer, bytesRead, header.getBytes(), header.length());
+                    recording_handler.capture_frame(frameBuffer);
                     recorded_frames += 1;
                 }
                 catch (Exception recording_e){
@@ -225,30 +224,18 @@ public class MjpegView extends SurfaceView{
         }
     }
     public boolean toggleRecording(){
-        if (is_recording) {
-            stopRecording();
-        }
-        else {
-            startRecording();
-        }
-        return is_recording;
+        return setRecording(!is_recording);
     }
-
-    public void startRecording() {
-        assert(!is_recording);
-        recording_handler.startRecording();
-        is_recording = true;
-    }
-    public void stopRecording() {
-        if (is_recording) {
-            try {
+    public boolean setRecording(boolean on) {
+        if (is_recording != on) {
+            is_recording = on;
+            if (is_recording) {
+                recording_handler.startRecording();
+            } else {
                 recording_handler.stopRecording();
             }
-            catch (Exception e){
-                Log.e("add a tag", "failed to stop recording", e);
-            }
         }
-        is_recording = false;
+        return is_recording;
     }
     public void connect() {
         for(int i = 0;; i++) {

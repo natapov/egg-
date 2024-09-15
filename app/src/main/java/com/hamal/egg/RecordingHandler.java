@@ -16,9 +16,6 @@ public class RecordingHandler {
         this.context = context;
     }
     MJPEGGenerator m = null;
-    /**
-     * Start recording the live image.
-     */
     public void startRecording() {
         try {
             File mjpegFilePath = createSavingFile("video", "avi");
@@ -28,14 +25,16 @@ public class RecordingHandler {
             Log.e(TAG, e.getMessage(), e);
         }
     }
-
-    /**
-     * Stop recording the live image.
-     */
-    public void stopRecording() throws Exception {
-        m.finishAVI();
+    public void stopRecording() {
+        try {
+            if (m != null) {
+                m.finishAVI();
+                m = null;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-
     private File createSavingFile(String prefix, String extension) {
         Date date = new Date();
 
@@ -55,8 +54,7 @@ public class RecordingHandler {
         }
         return null;
     }
-
-    public void capture_frame(byte[] bitmap, int bitmap_size, byte[] header, int header_size) {
+    public void capture_frame(byte[] bitmap) {
         try {
             m.addImage(bitmap);
         } catch (Exception e) {
