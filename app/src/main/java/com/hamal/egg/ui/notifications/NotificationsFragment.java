@@ -13,16 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
-import com.hamal.egg.R;
 import com.hamal.egg.databinding.FragmentVideoBinding;
-
-import android.view.ViewGroup;
-import android.widget.MediaController;
-import android.widget.VideoView;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
 import java.io.File;
 
 public class NotificationsFragment extends Fragment { private static final int READ_REQUEST_CODE = 42;

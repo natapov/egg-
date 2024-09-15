@@ -4,10 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,7 +15,6 @@ public class RecordingHandler {
     public RecordingHandler(Context context) {
         this.context = context;
     }
-    int frames = 20;
     MJPEGGenerator m = null;
     /**
      * Start recording the live image.
@@ -26,7 +22,7 @@ public class RecordingHandler {
     public void startRecording() {
         try {
             File mjpegFilePath = createSavingFile("video", "avi");
-            m = new MJPEGGenerator(mjpegFilePath, 640, 480, 12.0, frames);
+            m = new MJPEGGenerator(mjpegFilePath, 320, 180, 12.0, 0);
             Toast.makeText(context, "start recording, file path is:" + mjpegFilePath, Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
