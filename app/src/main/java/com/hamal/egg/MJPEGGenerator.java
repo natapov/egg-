@@ -23,8 +23,8 @@ public class MJPEGGenerator {
 
     int width = 0;
     int height = 0;
+    int frameCount = 0;
     double framerate = 0;
-    int numFrames = 0;
     File aviFile = null;
     FileOutputStream aviOutput = null;
     FileChannel aviChannel = null;
@@ -32,21 +32,15 @@ public class MJPEGGenerator {
     long aviMovieOffset = 0;
 
     AVIIndexList indexlist = null;
-
-    /**
-     * Creates a new instance of MJPEGGenerator
-     */
-    public MJPEGGenerator(File aviFile, int width, int height, double framerate, int numFrames) throws Exception {
+    public MJPEGGenerator(File aviFile, int width, int height, double framerate) throws Exception {
         this.aviFile = aviFile;
         this.width = width;
         this.height = height;
         this.framerate = framerate;
-        this.numFrames = numFrames;
         aviOutput = new FileOutputStream(aviFile);
         aviChannel = aviOutput.getChannel();
 
-        RIFFHeader rh = new RIFFHeader();
-        aviOutput.write(rh.toBytes());
+        aviOutput.write(new RIFFHeader().toBytes());
         aviOutput.write(new AVIMainHeader().toBytes());
         aviOutput.write(new AVIStreamList().toBytes());
         aviOutput.write(new AVIStreamHeader().toBytes());
@@ -57,9 +51,9 @@ public class MJPEGGenerator {
         indexlist = new AVIIndexList();
     }
 
-    public void addImage(byte[] imagedata) throws Exception {
+    public void addImage(byte[] imageData) throws Exception {
         byte[] fcc = new byte[]{'0', '0', 'd', 'b'};
-        int useLength = imagedata.length;
+        int useLength = imageData.length;
         long position = aviChannel.position();
         int extra = (useLength + (int) position) % 4;
         if (extra > 0)
@@ -69,11 +63,12 @@ public class MJPEGGenerator {
 
         aviOutput.write(fcc);
         aviOutput.write(intBytes(swapInt(useLength)));
-        aviOutput.write(imagedata);
+        aviOutput.write(imageData);
         if (extra > 0) {
             for (int i = 0; i < extra; i++)
                 aviOutput.write(0);
         }
+        frameCount++;
     }
 
     public void finishAVI() throws Exception {
@@ -82,6 +77,7 @@ public class MJPEGGenerator {
         aviOutput.close();
         long size = aviFile.length();
         RandomAccessFile raf = new RandomAccessFile(aviFile, "rw");
+        // todo add frame count
         raf.seek(4);
         raf.write(intBytes(swapInt((int) size - 8)));
         raf.seek(aviMovieOffset + 4);
@@ -104,7 +100,6 @@ public class MJPEGGenerator {
         b[1] = (byte) ((i >>> 16) & 0x000000FF);
         b[2] = (byte) ((i >>> 8) & 0x000000FF);
         b[3] = (byte) (i & 0x000000FF);
-
         return b;
     }
 
@@ -112,7 +107,6 @@ public class MJPEGGenerator {
         byte[] b = new byte[2];
         b[0] = (byte) (i >>> 8);
         b[1] = (byte) (i & 0x000000FF);
-
         return b;
     }
 
@@ -150,7 +144,6 @@ public class MJPEGGenerator {
         public int dwMaxBytesPerSec = 10000000;
         public int dwPaddingGranularity = 0;
         public int dwFlags = 65552;
-        public int dwTotalFrames = 0;  // replace with correct value
         public int dwInitialFrames = 0;
         public int dwStreams = 1;
         public int dwSuggestedBufferSize = 0;
@@ -162,7 +155,6 @@ public class MJPEGGenerator {
             dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
             dwWidth = width;
             dwHeight = height;
-            dwTotalFrames = numFrames;
         }
 
         public byte[] toBytes() throws Exception {
@@ -173,7 +165,7 @@ public class MJPEGGenerator {
             baos.write(intBytes(swapInt(dwMaxBytesPerSec)));
             baos.write(intBytes(swapInt(dwPaddingGranularity)));
             baos.write(intBytes(swapInt(dwFlags)));
-            baos.write(intBytes(swapInt(dwTotalFrames)));
+            baos.write(intBytes(swapInt(-1)));
             baos.write(intBytes(swapInt(dwInitialFrames)));
             baos.write(intBytes(swapInt(dwStreams)));
             baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
@@ -184,7 +176,6 @@ public class MJPEGGenerator {
             baos.write(intBytes(swapInt(dwReserved[2])));
             baos.write(intBytes(swapInt(dwReserved[3])));
             baos.close();
-
             return baos.toByteArray();
         }
     }
@@ -204,7 +195,6 @@ public class MJPEGGenerator {
             baos.write(intBytes(swapInt(size)));
             baos.write(fcc2);
             baos.close();
-
             return baos.toByteArray();
         }
     }
@@ -222,7 +212,6 @@ public class MJPEGGenerator {
         public int dwScale = 0; // microseconds per frame
         public int dwRate = 1000000; // dwRate / dwScale = frame rate
         public int dwStart = 0;
-        public int dwLength = 0; // num frames
         public int dwSuggestedBufferSize = 0;
         public int dwQuality = -1;
         public int dwSampleSize = 0;
@@ -233,7 +222,6 @@ public class MJPEGGenerator {
 
         public AVIStreamHeader() {
             dwScale = (int) ((1.0 / framerate) * 1000000.0);
-            dwLength = numFrames;
         }
 
         public byte[] toBytes() throws Exception {
@@ -249,7 +237,7 @@ public class MJPEGGenerator {
             baos.write(intBytes(swapInt(dwScale)));
             baos.write(intBytes(swapInt(dwRate)));
             baos.write(intBytes(swapInt(dwStart)));
-            baos.write(intBytes(swapInt(dwLength)));
+            baos.write(intBytes(swapInt(-1)));
             baos.write(intBytes(swapInt(dwSuggestedBufferSize)));
             baos.write(intBytes(swapInt(dwQuality)));
             baos.write(intBytes(swapInt(dwSampleSize)));
@@ -258,7 +246,6 @@ public class MJPEGGenerator {
             baos.write(intBytes(swapInt(right)));
             baos.write(intBytes(swapInt(bottom)));
             baos.close();
-
             return baos.toByteArray();
         }
     }
@@ -277,7 +264,6 @@ public class MJPEGGenerator {
         public int biYPelsPerMeter = 0;
         public int biClrUsed = 0;
         public int biClrImportant = 0;
-
 
         public AVIStreamFormat() {
             biWidth = width;

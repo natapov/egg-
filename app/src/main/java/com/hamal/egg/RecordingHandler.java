@@ -19,7 +19,7 @@ public class RecordingHandler {
     public void startRecording(String cam_name) {
         try {
             File mjpegFilePath = createSavingFile(cam_name, "avi");
-            m = new MJPEGGenerator(mjpegFilePath, 320, 180, 12.0, 0);
+            m = new MJPEGGenerator(mjpegFilePath, 320, 180, 12.0);
             Toast.makeText(context, "start recording, file path is:" + mjpegFilePath, Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);

@@ -1,7 +1,5 @@
 package com.hamal.egg.ui.notifications;
 
-import static android.app.Activity.RESULT_OK;
-
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -24,11 +22,9 @@ public class NotificationsFragment extends Fragment {
     private static final int READ_REQUEST_CODE = 42;
 
     private FragmentVideoBinding binding;
-    Uri current_video;
     Context context;
     private Intent intent;
     ExoPlayer player;
-    String url = "https://ia803409.us.archive.org/18/items/mp4_20210502/mp4.ia.mp4";
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -41,18 +37,20 @@ public class NotificationsFragment extends Fragment {
         player_view.setPlayer(player);
 
 
-        // create intent
-        // Create the intent
-        // Get the path to the app's external files directory
         File externalFilesDir = context.getExternalFilesDir(null);
-        Uri initialUri = Uri.parse(externalFilesDir.getAbsolutePath());
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");  // Set MIME type for AVI files
-        // Set the initial directory
-        intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri);
-        // Start the activity for result
-        startActivityForResult(intent, READ_REQUEST_CODE);
+        assert externalFilesDir != null;
+        File[] files = externalFilesDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.getName().endsWith(".avi")){
+                    MediaItem mediaItem = MediaItem.fromUri(Uri.fromFile(file));
+                    player.addMediaItem(mediaItem);
+                    break;
+                }
+            }
+        }
+        player.prepare();
+        player.play();
         return root;
     }
 
@@ -70,17 +68,5 @@ public class NotificationsFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == READ_REQUEST_CODE && resultCode == RESULT_OK) {
-            if (data != null) {
-                Uri selectedFileUri = data.getData();
-                MediaItem firstItem = MediaItem.fromUri(selectedFileUri);
-                player.addMediaItem(firstItem);
-            }
-        }
     }
 }
