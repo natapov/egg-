@@ -2,7 +2,6 @@ package com.hamal.egg;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.util.Log;
 import android.widget.Toast;
 import java.io.DataOutputStream;
@@ -15,11 +14,8 @@ import java.util.Date;
 
 public class RecordingHandler {
     private static final String TAG = "MjpegRecordingHandler";
-
     private final Context context;
     private DataOutputStream dos;
-    private Bitmap lastBitmap;
-
     public RecordingHandler(Context context) {
         this.context = context;
     }
@@ -29,7 +25,7 @@ public class RecordingHandler {
      */
     public void startRecording() {
         try {
-            String mjpegFilePath = createMjpegFile().getAbsolutePath();
+            String mjpegFilePath = createSavingFile("video", "mjpeg").getAbsolutePath();
             FileOutputStream fos = new FileOutputStream(mjpegFilePath);
             dos = new DataOutputStream(fos);
             Toast.makeText(context, "start recording, file path is:" + mjpegFilePath, Toast.LENGTH_LONG).show();
@@ -67,20 +63,11 @@ public class RecordingHandler {
 //        }
 //    }
 
-    /**
-     * Create a JPEG file in the app's external cache directory.
-     *
-     * @return File
-     */
-    private File createJpgFile() {
-        return createSavingFile("photo", "jpg");
-    }
-
     private File createSavingFile(String prefix, String extension) {
         Date date = new Date();
 
         @SuppressLint("SimpleDateFormat")
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat sdf = new SimpleDateFormat("ddMMyy-HH:mm:ss");
         String szFileName = prefix + "-" + sdf.format(date);
         try {
             String path = context.getExternalFilesDir(null).getPath() + "/" + szFileName + "." + extension;
@@ -94,15 +81,6 @@ public class RecordingHandler {
             Log.e(TAG, e.getMessage());
         }
         return null;
-    }
-
-    /**
-     * Create an MJPEG file in the app's external cache directory.
-     *
-     * @return File
-     */
-    private File createMjpegFile() {
-        return createSavingFile("video", "mjpeg");
     }
 
     public void capture_frame(byte[] bitmap, int bitmap_size, byte[] header, int header_size) {
