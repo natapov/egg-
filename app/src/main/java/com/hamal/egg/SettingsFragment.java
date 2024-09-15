@@ -1,7 +1,6 @@
 package com.hamal.egg;
 
 import android.os.Bundle;
-
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
