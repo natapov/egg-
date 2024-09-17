@@ -3,9 +3,11 @@ package com.hamal.egg.ui;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SeekBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -14,10 +16,10 @@ import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
 
-
 import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class PlayerFragment extends Fragment {
     private FragmentVideoBinding binding;
@@ -26,6 +28,7 @@ public class PlayerFragment extends Fragment {
     private MediaPlayer mediaPlayer;
     private VLCVideoLayout videoLayout;
     File selectedFile = null;
+    private Handler handler = new Handler();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -61,17 +64,110 @@ public class PlayerFragment extends Fragment {
         mediaPlayer = new MediaPlayer(libVlc);
         mediaPlayer.attachViews(videoLayout, null, false, false);
 
-        Media media = new Media(libVlc, Uri.fromFile(selectedFile));
-        media.setHWDecoderEnabled(true, false);
+        setupControls();
 
-        mediaPlayer.setMedia(media);
-        media.release();
-        mediaPlayer.play();
+        if (selectedFile != null) {
+            Media media = new Media(libVlc, Uri.fromFile(selectedFile));
+            media.setHWDecoderEnabled(true, false);
+
+            mediaPlayer.setMedia(media);
+            media.release();
+            mediaPlayer.play();
+            startProgressUpdate();
+        }
+    }
+
+    private void setupControls() {
+        binding.playPauseButton.setOnClickListener(v -> togglePlayPause());
+
+        binding.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    mediaPlayer.setTime(progress);
+                    updateCurrentTime();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        mediaPlayer.setEventListener(event -> {
+            switch (event.type) {
+                case MediaPlayer.Event.Playing:
+                case MediaPlayer.Event.Paused:
+                case MediaPlayer.Event.Stopped:
+                    updatePlayPauseButton();
+                    break;
+                case MediaPlayer.Event.EndReached:
+                    mediaPlayer.setTime(0);
+                    mediaPlayer.stop();
+                    updatePlayPauseButton();
+                    break;
+            }
+        });
+    }
+
+    private void togglePlayPause() {
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+        } else {
+            mediaPlayer.play();
+        }
+        updatePlayPauseButton();
+    }
+
+    private void updatePlayPauseButton() {
+        binding.playPauseButton.setImageResource(mediaPlayer.isPlaying() ?
+                android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play);
+    }
+
+    private void startProgressUpdate() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (mediaPlayer.isPlaying()) {
+                    long currentTime = mediaPlayer.getTime();
+                    long totalTime = mediaPlayer.getLength();
+                    updateTimeTexts(currentTime, totalTime);
+                    binding.seekBar.setMax((int) totalTime);
+                    binding.seekBar.setProgress((int) currentTime);
+                }
+                handler.postDelayed(this, 1000);
+            }
+        });
+    }
+
+    private void updateTimeTexts(long currentTime, long totalTime) {
+        binding.currentTimeText.setText(formatTime(currentTime));
+        binding.totalTimeText.setText(formatTime(totalTime));
+    }
+
+    private void updateCurrentTime() {
+        long currentTime = mediaPlayer.getTime();
+        binding.currentTimeText.setText(formatTime(currentTime));
+    }
+
+    private String formatTime(long timeMs) {
+        int totalSeconds = (int) (timeMs / 1000);
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+        if (hours > 0) {
+            return String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        handler.removeCallbacksAndMessages(null);
         mediaPlayer.stop();
         mediaPlayer.detachViews();
     }
