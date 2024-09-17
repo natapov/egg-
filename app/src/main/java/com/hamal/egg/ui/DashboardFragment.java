@@ -19,39 +19,32 @@ public class DashboardFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
-        context = getContext();
-        assert context != null;
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-
         binding = CameraViewBinding.inflate(inflater, container, false);
+        context = requireContext();
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        // link the cameras to their buttons, they are in charge of maintaining correct button state
+        binding.cam1.recording_button = binding.recordButton1;
+        binding.cam2.recording_button = binding.recordButton2;
+        binding.cam3.recording_button = binding.recordButton3;
+
         binding.recordButton1.setOnClickListener(n -> {
             boolean is_recording = binding.cam1.toggleRecording();
-            binding.recordButton1.setSelected(is_recording);
             if (sharedPreferences.getBoolean("record_all", true)) {
-                binding.recordButton2.setSelected(is_recording);
                 binding.cam2.setRecording(is_recording);
-                binding.recordButton3.setSelected(is_recording);
                 binding.cam3.setRecording(is_recording);
             }
         });
         binding.recordButton2.setOnClickListener(n -> {
             boolean is_recording = binding.cam2.toggleRecording();
-            binding.recordButton2.setSelected(is_recording);
             if (sharedPreferences.getBoolean("record_all", true)) {
-                binding.recordButton1.setSelected(is_recording);
                 binding.cam1.setRecording(is_recording);
-                binding.recordButton3.setSelected(is_recording);
                 binding.cam3.setRecording(is_recording);
-
             }
         });
         binding.recordButton3.setOnClickListener(n -> {
             boolean is_recording = binding.cam3.toggleRecording();
-            binding.recordButton3.setSelected(is_recording);
             if (sharedPreferences.getBoolean("record_all", true)) {
-                binding.recordButton1.setSelected(is_recording);
                 binding.cam1.setRecording(is_recording);
-                binding.recordButton2.setSelected(is_recording);
                 binding.cam2.setRecording(is_recording);
             }
         });
@@ -65,13 +58,5 @@ public class DashboardFragment extends Fragment {
         binding.cam1.startPlayback(activity, ":8008/stream.mjpg");
         binding.cam2.startPlayback(activity, ":9800/stream.mjpg");
         binding.cam3.startPlayback(activity, ":9801/stream.mjpg");
-    }
-    @Override
-    public void onDestroyView() {
-        binding.cam1.stopPlayback();
-        binding.cam2.stopPlayback();
-        binding.cam3.stopPlayback();
-        binding = null;
-        super.onDestroyView();
     }
 }

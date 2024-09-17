@@ -12,6 +12,8 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Button;
+
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
@@ -44,6 +46,7 @@ public class MjpegView extends SurfaceView{
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
     String m_url_end = null;
+    public Button recording_button = null;
     MainActivity ip_provider = null;
     Paint fpsPaint = null;
     SharedPreferences sharedPreferences = null;
@@ -229,12 +232,14 @@ public class MjpegView extends SurfaceView{
     public boolean setRecording(boolean on) {
         if (is_recording != on) {
             is_recording = on;
-            if (is_recording) {
+            if (is_recording)
                 recording_handler.startRecording(cam_name);
-            } else {
+            else
                 recording_handler.stopRecording();
-            }
+
         }
+        if (recording_button != null)
+            recording_button.setSelected(is_recording);
         return is_recording;
     }
     public void connect() {
