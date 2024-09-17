@@ -25,6 +25,7 @@ public class PlayerFragment extends Fragment {
     private LibVLC libVlc;
     private MediaPlayer mediaPlayer;
     private VLCVideoLayout videoLayout;
+    File selectedFile = null;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -39,6 +40,7 @@ public class PlayerFragment extends Fragment {
         if (files != null) {
             for (File file : files) {
                 if (file.getName().endsWith(".avi")){
+                    selectedFile = file;
                     break;
                 }
             }
@@ -59,9 +61,8 @@ public class PlayerFragment extends Fragment {
         mediaPlayer = new MediaPlayer(libVlc);
         mediaPlayer.attachViews(videoLayout, null, false, false);
 
-        Media media = new Media(libVlc, Uri.parse("your_video_url_here"));
+        Media media = new Media(libVlc, Uri.fromFile(selectedFile));
         media.setHWDecoderEnabled(true, false);
-        media.addOption(":network-caching=600");
 
         mediaPlayer.setMedia(media);
         media.release();
