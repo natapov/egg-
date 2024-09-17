@@ -8,6 +8,12 @@
             android:defaultValue="false" />
 
         <SwitchPreference
+            android:key="show_fps"
+            android:title="Camera fps"
+            android:summary="Show how many frames per second are received by each camera"
+            android:defaultValue="true" />
+
+        <SwitchPreference
             android:key="record_all"
             android:title="Record all"
             android:summary="Always record all cameras when on"

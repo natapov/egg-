@@ -31,16 +31,13 @@ public class MjpegView extends SurfaceView{
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
-    private final String CONTENT_LENGTH = "Content-Length: ";
     Thread thread = null;
     HttpURLConnection connection = null;
     boolean is_run = false;
     boolean is_recording;
     Rect dest_rect = null;
-
     Bitmap bm;
     URL url;
-
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
     Exception last_thread_exception = null;
@@ -184,7 +181,7 @@ public class MjpegView extends SurfaceView{
                         dest_rect.bottom + frame_offset,
                         frame_paint);
                 canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
-                if (true) {
+                if (sharedPreferences.getBoolean("show_fps", true)) {
                     if (ovl != null) {
                         int height = dest_rect.bottom - ovl.getHeight();
                         int width = dest_rect.right - ovl.getWidth();
@@ -287,6 +284,7 @@ public class MjpegView extends SurfaceView{
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {
         String s = new String(headerBytes);
+        String CONTENT_LENGTH = "Content-Length: ";
         int start = s.indexOf(CONTENT_LENGTH) + CONTENT_LENGTH.length();
         int end = s.indexOf('\r', start);
         String substring = s.substring(start, end);

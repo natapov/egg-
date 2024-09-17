@@ -38,13 +38,12 @@ public class RecordingHandler {
 
         @SuppressLint("SimpleDateFormat")
         SimpleDateFormat sdf = new SimpleDateFormat("dd_MM_yy_HH:mm:ss");
-        String szFileName = sdf.format(date) + "_" + postfix;
+        String szFileName = sdf.format(date) + "_" + postfix + "." + extension;
         try {
-            String path = context.getExternalFilesDir(null).getPath() + "/" + szFileName + "." + extension;
-            File file = new File(path);
-            if (!file.exists()) {
-                file.createNewFile();
-            }
+            File file = new File(context.getExternalFilesDir(null).getPath(), szFileName);
+            if (file.exists())
+                file.delete();
+            file.createNewFile();
             Log.d(TAG, "file path is " + file.getAbsolutePath());
             return file;
         } catch (IOException e) {
