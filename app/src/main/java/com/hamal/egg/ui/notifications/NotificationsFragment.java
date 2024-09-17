@@ -4,16 +4,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.DocumentsContract;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.media3.common.MediaItem;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.ui.PlayerView;
+//import org.videolan.libvlc.LibVLC;
+//import org.videolan.libvlc.Media;
+//import org.videolan.libvlc.MediaPlayer;
+//import org.videolan.libvlc.util.VLCVideoLayout;
+
 
 import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
@@ -21,7 +22,6 @@ import java.io.File;
 public class NotificationsFragment extends Fragment {
     private FragmentVideoBinding binding;
     Context context;
-    ExoPlayer player;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -29,9 +29,6 @@ public class NotificationsFragment extends Fragment {
         binding = FragmentVideoBinding.inflate(inflater, container, false);
         context = getContext();
         View root = binding.getRoot();
-        PlayerView player_view = binding.playerView;
-        player = new ExoPlayer.Builder(context).build();
-        player_view.setPlayer(player);
 
 
         File externalFilesDir = context.getExternalFilesDir(null);
@@ -40,14 +37,10 @@ public class NotificationsFragment extends Fragment {
         if (files != null) {
             for (File file : files) {
                 if (file.getName().endsWith(".avi")){
-                    MediaItem mediaItem = MediaItem.fromUri(Uri.fromFile(file));
-                    player.addMediaItem(mediaItem);
                     break;
                 }
             }
         }
-        player.prepare();
-        player.play();
         return root;
     }
 
