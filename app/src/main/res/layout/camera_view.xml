@@ -48,8 +48,7 @@
         android:background="@android:color/black"
 
         app:layout_constraintTop_toBottomOf="@+id/box_1"
-        app:layout_constraintBottom_toTopOf="@+id/box_3"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintBottom_toTopOf="@+id/box_3">
 
         <com.hamal.egg.MjpegView
             android:id="@+id/cam_2"

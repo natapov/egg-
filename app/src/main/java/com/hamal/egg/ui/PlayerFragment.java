@@ -15,6 +15,7 @@ import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
+import android.widget.ListView;
 
 import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
@@ -88,7 +89,6 @@ public class PlayerFragment extends Fragment {
                     updateCurrentTime();
                 }
             }
-
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {}
 
