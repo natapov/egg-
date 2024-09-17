@@ -1,4 +1,4 @@
-package com.hamal.egg.ui.dashboard;
+package com.hamal.egg.ui;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
