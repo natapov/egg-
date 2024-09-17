@@ -17,7 +17,7 @@ public class MJPEGGenerator {
     File aviFile = null;
     FileOutputStream aviOutput = null;
     FileChannel aviChannel = null;
-
+    final int dummy_int = 'Z' + ('Z'<<8) + ('Z'<<16) + ('Z'<<24);
     long aviMovieOffset = 0;
 
     AVIIndexList indexlist = null;
@@ -71,6 +71,10 @@ public class MJPEGGenerator {
         raf.write(intBytes(swapInt((int) size - 8)));
         raf.seek(aviMovieOffset + 4);
         raf.write(intBytes(swapInt((int) (size - 8 - aviMovieOffset - indexlistBytes.length))));
+        raf.seek(48);
+        raf.write(intBytes(swapInt(frameCount)));
+        raf.seek(140);
+        raf.write(intBytes(swapInt(frameCount)));
         raf.close();
     }
 
@@ -132,7 +136,7 @@ public class MJPEGGenerator {
         fos.write(intBytes(swapInt(dwMaxBytesPerSec)));
         fos.write(intBytes(swapInt(dwPaddingGranularity)));
         fos.write(intBytes(swapInt(dwFlags)));
-        fos.write(intBytes(swapInt('Z')));
+        fos.write(intBytes(swapInt(dummy_int)));
         fos.write(intBytes(swapInt(dwInitialFrames)));
         fos.write(intBytes(swapInt(dwStreams)));
         fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
@@ -186,7 +190,7 @@ public class MJPEGGenerator {
         fos.write(intBytes(swapInt(dwScale)));
         fos.write(intBytes(swapInt(dwRate)));
         fos.write(intBytes(swapInt(dwStart)));
-        fos.write(intBytes(swapInt('Z')));
+        fos.write(intBytes(swapInt(dummy_int)));
         fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
         fos.write(intBytes(swapInt(dwQuality)));
         fos.write(intBytes(swapInt(dwSampleSize)));
