@@ -9,8 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
-
-import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -19,13 +17,9 @@ import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
 import android.widget.ListView;
-import android.widget.Toast;
-
-import com.hamal.egg.R;
 import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 public class PlayerFragment extends Fragment {
@@ -34,12 +28,11 @@ public class PlayerFragment extends Fragment {
     private LibVLC libVlc;
     private MediaPlayer mediaPlayer;
     private VLCVideoLayout videoLayout;
-    File selectedFile = null;
+    private File selectedFile = null;
     private Handler handler = new Handler();
     private ListView listView;
     private ArrayAdapter<String> adapter;
     private ArrayList<String> fileList;
-
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -49,29 +42,39 @@ public class PlayerFragment extends Fragment {
         View root = binding.getRoot();
         videoLayout = binding.videoLayout;
         listView = binding.listView;
+
+        loadFileList();
+        setupListView();
+
+        return root;
+    }
+
+    private void loadFileList() {
         File externalFilesDir = context.getExternalFilesDir(null);
         assert externalFilesDir != null;
         File[] files = externalFilesDir.listFiles();
-        fileList = new ArrayList<String>();
+        fileList = new ArrayList<>();
         if (files != null) {
             for (File file : files) {
-                if (file.getName().endsWith(".avi")){
+                if (file.getName().endsWith(".avi")) {
                     fileList.add(file.getName());
                 }
             }
         }
-        // Create and set the adapter
-        adapter = new ArrayAdapter<>(context, android.R.layout.simple_list_item_checked, fileList);
+    }
+
+    private void setupListView() {
+        adapter = new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, fileList);
         listView.setAdapter(adapter);
-        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
-        // Set item click listener
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedFile = fileList.get(position);
-            boolean isChecked = listView.isItemChecked(position);
+            String selectedFileName = fileList.get(position);
+            File externalFilesDir = context.getExternalFilesDir(null);
+            assert externalFilesDir != null;
+            selectedFile = new File(externalFilesDir, selectedFileName);
+            initializePlayer();
         });
-
-        return root;
     }
 
     @Override
@@ -88,8 +91,10 @@ public class PlayerFragment extends Fragment {
         mediaPlayer.attachViews(videoLayout, null, false, false);
 
         setupControls();
+    }
 
-        if (selectedFile != null) {
+    private void initializePlayer() {
+        if (selectedFile != null && selectedFile.exists()) {
             Media media = new Media(libVlc, Uri.fromFile(selectedFile));
             media.setHWDecoderEnabled(true, false);
 
@@ -97,6 +102,7 @@ public class PlayerFragment extends Fragment {
             media.release();
             mediaPlayer.play();
             startProgressUpdate();
+            updatePlayPauseButton();
         }
     }
 
