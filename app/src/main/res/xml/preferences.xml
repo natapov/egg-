@@ -14,7 +14,7 @@
             android:defaultValue="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Advanced Settings">
+    <PreferenceCategory android:title="Info">
 <!--        <ListPreference-->
 <!--            android:key="update_interval"-->
 <!--            android:title="Update Interval"-->
@@ -26,6 +26,10 @@
         <Preference
             android:key="egg_ip"
             android:title="Egg ip"
+            android:summary="Loading..." />
+        <Preference
+            android:key="recording_folder"
+            android:title="Recordings location"
             android:summary="Loading..." />
 
     </PreferenceCategory>

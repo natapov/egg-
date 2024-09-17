@@ -66,7 +66,6 @@ public class MJPEGGenerator {
         aviOutput.close();
         long size = aviFile.length();
         RandomAccessFile raf = new RandomAccessFile(aviFile, "rw");
-        // todo add frame count
         raf.seek(4);
         raf.write(intBytes((int) size - 8));
         raf.seek(aviMovieOffset + 4);
