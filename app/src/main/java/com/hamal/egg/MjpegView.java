@@ -62,7 +62,7 @@ public class MjpegView extends SurfaceView{
         holder.addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                dest_rect = destRect(default_width, default_height); //todo verify how constant this really is
+                dest_rect = destRect(default_width, default_height);
             }
             @Override
             public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
@@ -255,7 +255,6 @@ public class MjpegView extends SurfaceView{
             catch (Exception e){
                 last_thread_exception = e;
                 Log.e("Restarting draw loop", "got exception: ", e);
-
                 continue; // try again
             }
             last_thread_exception = null;
