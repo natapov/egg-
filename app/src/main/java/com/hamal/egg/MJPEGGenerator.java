@@ -51,7 +51,7 @@ public class MJPEGGenerator {
         indexlist.addAVIIndex((int) position, useLength);
 
         aviOutput.write(fcc);
-        aviOutput.write(intBytes(swapInt(useLength)));
+        aviOutput.write(intBytes(useLength));
         aviOutput.write(imageData);
         if (extra > 0) {
             for (int i = 0; i < extra; i++)
@@ -68,37 +68,32 @@ public class MJPEGGenerator {
         RandomAccessFile raf = new RandomAccessFile(aviFile, "rw");
         // todo add frame count
         raf.seek(4);
-        raf.write(intBytes(swapInt((int) size - 8)));
+        raf.write(intBytes((int) size - 8));
         raf.seek(aviMovieOffset + 4);
-        raf.write(intBytes(swapInt((int) (size - 8 - aviMovieOffset - indexlistBytes.length))));
+        raf.write(intBytes((int) (size - 8 - aviMovieOffset - indexlistBytes.length)));
         raf.seek(48);
-        raf.write(intBytes(swapInt(frameCount)));
+        raf.write(intBytes(frameCount));
         raf.seek(140);
-        raf.write(intBytes(swapInt(frameCount)));
+        raf.write(intBytes(frameCount));
         raf.close();
     }
 
-    public static int swapInt(int v) {
-        return (v >>> 24) | (v << 24) | ((v << 8) & 0x00FF0000) | ((v >> 8) & 0x0000FF00);
-    }
-
-    public static short swapShort(short v) {
-        return (short) ((v >>> 8) | (v << 8));
-    }
-
+    
     public static byte[] intBytes(int i) {
+        // this function also swaps the order of the bytes
         byte[] b = new byte[4];
-        b[0] = (byte) (i >>> 24);
-        b[1] = (byte) ((i >>> 16) & 0x000000FF);
-        b[2] = (byte) ((i >>> 8) & 0x000000FF);
-        b[3] = (byte) (i & 0x000000FF);
+        b[0] = (byte) (i & 0x000000FF);
+        b[1] = (byte) ((i >>> 8) & 0x000000FF);
+        b[2] = (byte) ((i >>> 16) & 0x000000FF);
+        b[3] = (byte) (i >>> 24);
         return b;
     }
 
     public static byte[] shortBytes(short i) {
+        // this function also swaps the order of the bytes
         byte[] b = new byte[2];
-        b[0] = (byte) (i >>> 8);
-        b[1] =(byte) (i & 0x000000FF);
+        b[0] =(byte) (i & 0x000000FF);
+        b[1] = (byte) (i >>> 8);
         return b;
     }
 
@@ -111,10 +106,10 @@ public class MJPEGGenerator {
         byte[] fcc4 = {'h', 'd', 'r', 'l'};
 
         fos.write(fcc1);
-        fos.write(intBytes(swapInt(fileSize)));
+        fos.write(intBytes(fileSize));
         fos.write(fcc2);
         fos.write(fcc3);
-        fos.write(intBytes(swapInt(listSize)));
+        fos.write(intBytes(listSize));
         fos.write(fcc4);
     }
 
@@ -131,21 +126,21 @@ public class MJPEGGenerator {
         int dwReserved = 0;
 
         fos.write(fcc);
-        fos.write(intBytes(swapInt(cb)));
-        fos.write(intBytes(swapInt(dwMicroSecPerFrame)));
-        fos.write(intBytes(swapInt(dwMaxBytesPerSec)));
-        fos.write(intBytes(swapInt(dwPaddingGranularity)));
-        fos.write(intBytes(swapInt(dwFlags)));
-        fos.write(intBytes(swapInt(dummy_int)));
-        fos.write(intBytes(swapInt(dwInitialFrames)));
-        fos.write(intBytes(swapInt(dwStreams)));
-        fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
-        fos.write(intBytes(swapInt(width)));
-        fos.write(intBytes(swapInt(height)));
-        fos.write(intBytes(swapInt(dwReserved)));
-        fos.write(intBytes(swapInt(dwReserved)));
-        fos.write(intBytes(swapInt(dwReserved)));
-        fos.write(intBytes(swapInt(dwReserved)));
+        fos.write(intBytes(cb));
+        fos.write(intBytes(dwMicroSecPerFrame));
+        fos.write(intBytes(dwMaxBytesPerSec));
+        fos.write(intBytes(dwPaddingGranularity));
+        fos.write(intBytes(dwFlags));
+        fos.write(intBytes(dummy_int));
+        fos.write(intBytes(dwInitialFrames));
+        fos.write(intBytes(dwStreams));
+        fos.write(intBytes(dwSuggestedBufferSize));
+        fos.write(intBytes(width));
+        fos.write(intBytes(height));
+        fos.write(intBytes(dwReserved));
+        fos.write(intBytes(dwReserved));
+        fos.write(intBytes(dwReserved));
+        fos.write(intBytes(dwReserved));
     }
 
     void AVIStreamList(FileOutputStream fos) throws IOException {
@@ -154,7 +149,7 @@ public class MJPEGGenerator {
         byte[] fcc2 = {'s', 't', 'r', 'l'};
 
         fos.write(fcc);
-        fos.write(intBytes(swapInt(size)));
+        fos.write(intBytes(size));
         fos.write(fcc2);
     }
 
@@ -180,24 +175,24 @@ public class MJPEGGenerator {
         int bottom = 0;
 
         fos.write(fcc);
-        fos.write(intBytes(swapInt(cb)));
+        fos.write(intBytes(cb));
         fos.write(fccType);
         fos.write(fccHandler);
-        fos.write(intBytes(swapInt(dwFlags)));
-        fos.write(shortBytes(swapShort(wPriority)));
-        fos.write(shortBytes(swapShort(wLanguage)));
-        fos.write(intBytes(swapInt(dwInitialFrames)));
-        fos.write(intBytes(swapInt(dwScale)));
-        fos.write(intBytes(swapInt(dwRate)));
-        fos.write(intBytes(swapInt(dwStart)));
-        fos.write(intBytes(swapInt(dummy_int)));
-        fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
-        fos.write(intBytes(swapInt(dwQuality)));
-        fos.write(intBytes(swapInt(dwSampleSize)));
-        fos.write(intBytes(swapInt(left)));
-        fos.write(intBytes(swapInt(top)));
-        fos.write(intBytes(swapInt(right)));
-        fos.write(intBytes(swapInt(bottom)));
+        fos.write(intBytes(dwFlags));
+        fos.write(shortBytes(wPriority));
+        fos.write(shortBytes(wLanguage));
+        fos.write(intBytes(dwInitialFrames));
+        fos.write(intBytes(dwScale));
+        fos.write(intBytes(dwRate));
+        fos.write(intBytes(dwStart));
+        fos.write(intBytes(dummy_int));
+        fos.write(intBytes(dwSuggestedBufferSize));
+        fos.write(intBytes(dwQuality));
+        fos.write(intBytes(dwSampleSize));
+        fos.write(intBytes(left));
+        fos.write(intBytes(top));
+        fos.write(intBytes(right));
+        fos.write(intBytes(bottom));
     }
 
     void AVIStreamFormat(FileOutputStream fos) throws IOException {
@@ -216,18 +211,18 @@ public class MJPEGGenerator {
         int biClrImportant = 0;
 
         fos.write(fcc);
-        fos.write(intBytes(swapInt(cb)));
-        fos.write(intBytes(swapInt(biSize)));
-        fos.write(intBytes(swapInt(biWidth)));
-        fos.write(intBytes(swapInt(biHeight)));
-        fos.write(shortBytes(swapShort(biPlanes)));
-        fos.write(shortBytes(swapShort(biBitCount)));
+        fos.write(intBytes(cb));
+        fos.write(intBytes(biSize));
+        fos.write(intBytes(biWidth));
+        fos.write(intBytes(biHeight));
+        fos.write(shortBytes(biPlanes));
+        fos.write(shortBytes(biBitCount));
         fos.write(biCompression);
-        fos.write(intBytes(swapInt(biSizeImage)));
-        fos.write(intBytes(swapInt(biXPelsPerMeter)));
-        fos.write(intBytes(swapInt(biYPelsPerMeter)));
-        fos.write(intBytes(swapInt(biClrUsed)));
-        fos.write(intBytes(swapInt(biClrImportant)));
+        fos.write(intBytes(biSizeImage));
+        fos.write(intBytes(biXPelsPerMeter));
+        fos.write(intBytes(biYPelsPerMeter));
+        fos.write(intBytes(biClrUsed));
+        fos.write(intBytes(biClrImportant));
     }
 
     void AVIMovieList(FileOutputStream fos) throws IOException {
@@ -237,7 +232,7 @@ public class MJPEGGenerator {
         // 00db size jpg image data ...
 
         fos.write(fcc);
-        fos.write(intBytes(swapInt(listSize)));
+        fos.write(intBytes(listSize));
         fos.write(fcc2);
     }
 
@@ -258,7 +253,7 @@ public class MJPEGGenerator {
             cb = 16 * ind.size();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
-            baos.write(intBytes(swapInt(cb)));
+            baos.write(intBytes(cb));
             for (int i = 0; i < ind.size(); i++) {
                 AVIIndex in = (AVIIndex) ind.get(i);
                 baos.write(in.toBytes());
@@ -284,9 +279,9 @@ public class MJPEGGenerator {
         public byte[] toBytes() throws Exception {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             baos.write(fcc);
-            baos.write(intBytes(swapInt(dwFlags)));
-            baos.write(intBytes(swapInt(dwOffset)));
-            baos.write(intBytes(swapInt(dwSize)));
+            baos.write(intBytes(dwFlags));
+            baos.write(intBytes(dwOffset));
+            baos.write(intBytes(dwSize));
             baos.close();
             return baos.toByteArray();
         }
@@ -299,7 +294,7 @@ public class MJPEGGenerator {
         Arrays.fill(data, (byte) 0);
 
         fos.write(fcc);
-        fos.write(intBytes(swapInt(size)));
+        fos.write(intBytes(size));
         fos.write(data);
     }
 }

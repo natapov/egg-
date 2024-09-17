@@ -19,11 +19,8 @@ import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
 
 public class NotificationsFragment extends Fragment {
-    private static final int READ_REQUEST_CODE = 42;
-
     private FragmentVideoBinding binding;
     Context context;
-    private Intent intent;
     ExoPlayer player;
 
     @Override
