@@ -117,7 +117,7 @@ public class MJPEGGenerator {
     void AVIMainHeader(FileOutputStream fos) throws IOException {
         byte[] fcc = {'a', 'v', 'i', 'h'};
         int cb = 56;
-        int dwMicroSecPerFrame = 0; //  (1 / frames per sec) * 1,000,000
+        int dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
         int dwMaxBytesPerSec = 10000000;
         int dwPaddingGranularity = 0;
         int dwFlags = 65552;
@@ -125,7 +125,6 @@ public class MJPEGGenerator {
         int dwStreams = 1;
         int dwSuggestedBufferSize = 0;
         int dwReserved = 0;
-        dwMicroSecPerFrame = (int) ((1.0 / framerate) * 1000000.0);
 
         fos.write(fcc);
         fos.write(intBytes(swapInt(cb)));
@@ -133,7 +132,7 @@ public class MJPEGGenerator {
         fos.write(intBytes(swapInt(dwMaxBytesPerSec)));
         fos.write(intBytes(swapInt(dwPaddingGranularity)));
         fos.write(intBytes(swapInt(dwFlags)));
-        fos.write(intBytes(swapInt(-1)));
+        fos.write(intBytes(swapInt('Z')));
         fos.write(intBytes(swapInt(dwInitialFrames)));
         fos.write(intBytes(swapInt(dwStreams)));
         fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
@@ -165,7 +164,7 @@ public class MJPEGGenerator {
         short wPriority = 0;
         short wLanguage = 0;
         int dwInitialFrames = 0;
-        int dwScale = 0; // microseconds per frame
+        int dwScale = (int) ((1.0 / framerate) * 1000000.0); // microseconds per frame
         int dwRate = 1000000; // dwRate / dwScale = frame rate
         int dwStart = 0;
         int dwSuggestedBufferSize = 0;
@@ -175,8 +174,6 @@ public class MJPEGGenerator {
         int top = 0;
         int right = 0;
         int bottom = 0;
-
-        dwScale = (int) ((1.0 / framerate) * 1000000.0);
 
         fos.write(fcc);
         fos.write(intBytes(swapInt(cb)));
@@ -189,7 +186,7 @@ public class MJPEGGenerator {
         fos.write(intBytes(swapInt(dwScale)));
         fos.write(intBytes(swapInt(dwRate)));
         fos.write(intBytes(swapInt(dwStart)));
-        fos.write(intBytes(swapInt(-1)));
+        fos.write(intBytes(swapInt('Z')));
         fos.write(intBytes(swapInt(dwSuggestedBufferSize)));
         fos.write(intBytes(swapInt(dwQuality)));
         fos.write(intBytes(swapInt(dwSampleSize)));
@@ -203,20 +200,16 @@ public class MJPEGGenerator {
         byte[] fcc = {'s', 't', 'r', 'f'};
         int cb = 40;
         int biSize = 40; // same as cb
-        int biWidth = 0;
-        int biHeight = 0;
+        int biWidth = width;
+        int biHeight = height;
         short biPlanes = 1;
         short biBitCount = 24;
         byte[] biCompression = {'M', 'J', 'P', 'G'};
-        int biSizeImage = 0; // width x height in pixels
+        int biSizeImage = width * height;
         int biXPelsPerMeter = 0;
         int biYPelsPerMeter = 0;
         int biClrUsed = 0;
         int biClrImportant = 0;
-
-        biWidth = width;
-        biHeight = height;
-        biSizeImage = width * height;
 
         fos.write(fcc);
         fos.write(intBytes(swapInt(cb)));
@@ -251,9 +244,6 @@ public class MJPEGGenerator {
 
         public AVIIndexList() {
 
-        }
-        public void addAVIIndex(AVIIndex ai) {
-            ind.add(ai);
         }
 
         public void addAVIIndex(int dwOffset, int dwSize) {

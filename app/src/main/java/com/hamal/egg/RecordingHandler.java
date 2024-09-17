@@ -54,9 +54,9 @@ public class RecordingHandler {
         }
         return null;
     }
-    public void capture_frame(byte[] bitmap) {
+    public void capture_frame(byte[] jpeg) {
         try {
-            m.addImage(bitmap);
+            m.addImage(jpeg);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
         }

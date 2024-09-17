@@ -26,10 +26,10 @@ public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 100;
     final static int stroke_width = 4;
     final static int frame_offset = stroke_width/2;
-    private final static int FRAME_MAX_LENGTH = 150000;
+    static final int default_width = 640;
+    static final int default_height = 360;
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
-    public byte[] frameBuffer = new byte[FRAME_MAX_LENGTH];
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     private final String CONTENT_LENGTH = "Content-Length: ";
     Thread thread = null;
@@ -37,8 +37,7 @@ public class MjpegView extends SurfaceView{
     boolean is_run = false;
     boolean is_recording;
     Rect dest_rect = null;
-    static final int default_width = 640;
-    static final int default_height= 360;
+
     Bitmap bm;
     URL url;
 
@@ -105,11 +104,12 @@ public class MjpegView extends SurfaceView{
         }
         throw new IOException("Bad packet format");
     }
-    public int read_frame() throws IOException {
+    public byte[] read_frame() throws IOException {
         read_until_sequence(headerBuffer, data_input, SOI_MARKER);
         int contentLength = parseContentLength(headerBuffer);
+        byte[] frameBuffer = new byte[contentLength];
         data_input.readFully(frameBuffer,0, contentLength);
-        return contentLength;
+        return frameBuffer;
     }
     private Rect destRect(int bmw, int bmh) {
         final int x = (getWidth() / 2) - (bmw / 2);
@@ -142,14 +142,15 @@ public class MjpegView extends SurfaceView{
         Bitmap ovl = null;
         long last_print_time = 0;
         int frame_count = 0;
+        byte[] frame_buffer = null;
         while(is_run){
-            int bytesRead = 0;
             try {
                 if (sharedPreferences.getBoolean("reconnect_mode", true)){
                     prepare_connection();
                 }
-                bytesRead = read_frame();
-                assert (bytesRead > 0);
+                frame_buffer = read_frame();
+                assert frame_buffer != null;
+                assert (frame_buffer.length > 0);
             }
             catch (IOException e){
                 read_exception = e;
@@ -164,7 +165,8 @@ public class MjpegView extends SurfaceView{
                 }
             }
             if (read_exception == null) {
-                bm = BitmapFactory.decodeByteArray(frameBuffer, 0, bytesRead, options);
+                assert frame_buffer != null;
+                bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
                 if (first_frame) {
                     options.inBitmap = bm; //reuse bm after first time
                 }
@@ -213,12 +215,14 @@ public class MjpegView extends SurfaceView{
 
             if (is_recording) {
                 try {
-                    recording_handler.capture_frame(frameBuffer);
+                    assert frame_buffer != null;
+                    recording_handler.capture_frame(frame_buffer);
                 }
                 catch (Exception recording_e){
                     Log.e("recording", "exception occurred", recording_e);
                 }
             }
+            frame_buffer = null;
         }
     }
     public boolean toggleRecording(){
