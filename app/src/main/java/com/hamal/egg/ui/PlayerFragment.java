@@ -7,7 +7,10 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
+
+import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -16,10 +19,13 @@ import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.hamal.egg.R;
 import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class PlayerFragment extends Fragment {
@@ -30,6 +36,10 @@ public class PlayerFragment extends Fragment {
     private VLCVideoLayout videoLayout;
     File selectedFile = null;
     private Handler handler = new Handler();
+    private ListView listView;
+    private ArrayAdapter<String> adapter;
+    private ArrayList<String> fileList;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -38,17 +48,29 @@ public class PlayerFragment extends Fragment {
         context = getContext();
         View root = binding.getRoot();
         videoLayout = binding.videoLayout;
+        listView = binding.listView;
         File externalFilesDir = context.getExternalFilesDir(null);
         assert externalFilesDir != null;
         File[] files = externalFilesDir.listFiles();
+        fileList = new ArrayList<String>();
         if (files != null) {
             for (File file : files) {
                 if (file.getName().endsWith(".avi")){
-                    selectedFile = file;
-                    break;
+                    fileList.add(file.getName());
                 }
             }
         }
+        // Create and set the adapter
+        adapter = new ArrayAdapter<>(context, android.R.layout.simple_list_item_checked, fileList);
+        listView.setAdapter(adapter);
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+        // Set item click listener
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedFile = fileList.get(position);
+            boolean isChecked = listView.isItemChecked(position);
+        });
+
         return root;
     }
 
