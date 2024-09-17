@@ -71,9 +71,6 @@ public class DashboardFragment extends Fragment {
         binding.cam1.stopPlayback();
         binding.cam2.stopPlayback();
         binding.cam3.stopPlayback();
-        binding.recordButton1.setSelected(false);
-        binding.recordButton2.setSelected(false);
-        binding.recordButton3.setSelected(false);
         binding = null;
         super.onDestroyView();
     }

@@ -82,19 +82,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause(){
         super.onPause();
         running = false;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
+
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        running = false;
         if (thread != null) {
             thread.interrupt();
             thread = null;
         }
+        super.onDestroy();
     }
 }

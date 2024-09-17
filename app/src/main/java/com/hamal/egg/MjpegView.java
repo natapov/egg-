@@ -173,6 +173,7 @@ public class MjpegView extends SurfaceView{
                 canvas = holder.lockCanvas();
                 if (canvas == null) {
                     Log.w("draw thread", "null canvas, skipping render");
+                    read_exception = null;//don't care about previous exception
                     throw new Exception("canvas problem");
                 }
                 canvas.drawRect(dest_rect.left - frame_offset,
