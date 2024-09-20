@@ -9,7 +9,7 @@
 
         <SwitchPreference
             android:key="show_fps"
-            android:title="Camera fps"
+            android:title="Display camera FPS"
             android:summary="Show how many frames per second are received by each camera"
             android:defaultValue="true" />
 

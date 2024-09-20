@@ -166,6 +166,10 @@ public class MjpegView extends SurfaceView{
             if (read_exception == null) {
                 assert frame_buffer != null;
                 bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
+                if (bm == null) {
+                    Log.w("draw thread", "failed to create bitmap, skipping render");
+                    continue;
+                }
                 if (first_frame) {
                     options.inBitmap = bm; //reuse bm after first time
                 }
@@ -261,6 +265,9 @@ public class MjpegView extends SurfaceView{
                 }
                 run_loop();
             }
+            catch (InterruptedException e) {
+                Log.e("connect", "thread interrupted, halting", e);
+            }
             catch (Exception e){
                 Log.e("Restarting draw loop", "got exception: ", e);
                 continue; // try again
@@ -282,10 +289,8 @@ public class MjpegView extends SurfaceView{
 
     public void stopPlayback()  {
         is_run = false;
-        while (thread != null) try {
-            thread.join();
-            thread = null;
-        } catch (InterruptedException ignored) {}
+        thread.interrupt();
+        thread = null;
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {

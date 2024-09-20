@@ -13,12 +13,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setPreferencesFromResource(R.xml.preferences, rootKey);
         Preference eggIpPref = findPreference("egg_ip");
         if (eggIpPref != null) {
-            try {
-                MainActivity ip_provider = (MainActivity) context;
-                eggIpPref.setSummary(ip_provider.get_ip());
-            } catch (InterruptedException e) {
-                eggIpPref.setSummary("N/A");
-            }
+            MainActivity ip_provider = (MainActivity) context;
+            eggIpPref.setSummary(ip_provider.sample_ip());
         }
 
         Preference recordingFolderPref = findPreference("recording_folder");

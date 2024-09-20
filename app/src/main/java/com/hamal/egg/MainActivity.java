@@ -58,6 +58,13 @@ public class MainActivity extends AppCompatActivity {
             return latestReceivedString;
         }
     }
+    public String sample_ip() {
+        if (latestReceivedString == null) {
+            return "N/A";
+        }
+        return latestReceivedString;
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
