@@ -39,7 +39,6 @@ public class MjpegView extends SurfaceView{
     Bitmap bm;
     URL url;
     BitmapFactory.Options options = new BitmapFactory.Options();
-    SurfaceHolder holder = null;
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
     String m_url_end = null;
@@ -52,14 +51,13 @@ public class MjpegView extends SurfaceView{
         super(context, attrs);
         recording_handler = new RecordingHandler(context);
         options.inMutable = true;
-        holder = this.getHolder();
         fpsPaint = new Paint();
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         cam_name = getResources().getResourceEntryName(getId());
 
-        holder.addCallback(new SurfaceHolder.Callback() {
+        this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
                 dest_rect = destRect(default_width, default_height);
@@ -70,7 +68,12 @@ public class MjpegView extends SurfaceView{
             }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                setRecording(false);
+                try {
+                    holder.unlockCanvasAndPost(null);
+                }
+                catch (Exception ignored){}
+//                stopPlayback();
+//                setRecording(false);
             }
         });
     }
@@ -169,8 +172,9 @@ public class MjpegView extends SurfaceView{
                 frame_paint.setColor(Color.GRAY);
             }
             try {
-                canvas = holder.lockCanvas();
+                canvas = this.getHolder().lockCanvas();
                 if (canvas == null) {
+
                     Log.w("draw thread", "null canvas, skipping render");
                     continue;
                 }
@@ -202,18 +206,17 @@ public class MjpegView extends SurfaceView{
             finally {
                 if (canvas != null) {
                     try {
-                        holder.unlockCanvasAndPost(canvas);
+                        this.getHolder().unlockCanvasAndPost(canvas);
                     }
                     catch (IllegalStateException e){
                         Log.w("run_loop", "canvas issue", e);
                     }
                 }
-                if(read_exception != null){
-                    throw read_exception;
-                }
                 canvas = null;
             }
-
+            if(read_exception != null){
+                throw read_exception;
+            }
             if (is_recording) {
                 try {
                     assert frame_buffer != null;
@@ -258,13 +261,13 @@ public class MjpegView extends SurfaceView{
                 }
                 run_loop();
             }
-            catch (IOException e){
+            catch (Exception e){
                 Log.e("Restarting draw loop", "got exception: ", e);
                 continue; // try again
             }
-            catch (Exception e) {
-                Log.e("kuku", "can't handle, pls restart me", e);
-            }
+//            catch (Exception e) {
+//                Log.e("kuku", "can't handle, pls restart me", e);
+//            }
             break;
         }
     }
@@ -278,11 +281,11 @@ public class MjpegView extends SurfaceView{
     }
 
     public void stopPlayback()  {
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-        }
         is_run = false;
+        while (thread != null) try {
+            thread.join();
+            thread = null;
+        } catch (InterruptedException ignored) {}
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {

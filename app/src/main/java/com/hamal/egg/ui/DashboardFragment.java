@@ -61,10 +61,11 @@ public class DashboardFragment extends Fragment {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onPause() {
+        super.onPause();
         binding.cam1.stopPlayback();
         binding.cam2.stopPlayback();
         binding.cam3.stopPlayback();
     }
+
 }
