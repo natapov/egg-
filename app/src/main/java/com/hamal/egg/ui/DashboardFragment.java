@@ -59,4 +59,12 @@ public class DashboardFragment extends Fragment {
         binding.cam2.startPlayback(activity, ":9800/stream.mjpg");
         binding.cam3.startPlayback(activity, ":9801/stream.mjpg");
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        binding.cam1.stopPlayback();
+        binding.cam2.stopPlayback();
+        binding.cam3.stopPlayback();
+    }
 }

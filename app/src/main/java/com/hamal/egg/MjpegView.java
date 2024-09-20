@@ -13,7 +13,6 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
-
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
@@ -22,7 +21,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 
 public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 100;
@@ -42,7 +40,6 @@ public class MjpegView extends SurfaceView{
     URL url;
     BitmapFactory.Options options = new BitmapFactory.Options();
     SurfaceHolder holder = null;
-    Exception last_thread_exception = null;
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
     String m_url_end = null;
@@ -74,7 +71,6 @@ public class MjpegView extends SurfaceView{
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
                 setRecording(false);
-                stopPlayback();
             }
         });
     }
@@ -138,7 +134,7 @@ public class MjpegView extends SurfaceView{
         Paint frame_paint = new Paint();
         frame_paint.setStyle(Paint.Style.STROKE);
         frame_paint.setStrokeWidth(stroke_width);
-        Exception read_exception = null;
+        IOException read_exception = null;
         Bitmap ovl = null;
         long last_print_time = 0;
         int frame_count = 0;
@@ -176,8 +172,7 @@ public class MjpegView extends SurfaceView{
                 canvas = holder.lockCanvas();
                 if (canvas == null) {
                     Log.w("draw thread", "null canvas, skipping render");
-                    read_exception = null;//don't care about previous exception
-                    throw new Exception("canvas problem");
+                    continue;
                 }
                 canvas.drawRect(dest_rect.left - frame_offset,
                         dest_rect.top - frame_offset,
@@ -206,12 +201,17 @@ public class MjpegView extends SurfaceView{
             }
             finally {
                 if (canvas != null) {
-                    holder.unlockCanvasAndPost(canvas);
-                    canvas = null;
+                    try {
+                        holder.unlockCanvasAndPost(canvas);
+                    }
+                    catch (IllegalStateException e){
+                        Log.w("run_loop", "canvas issue", e);
+                    }
                 }
                 if(read_exception != null){
                     throw read_exception;
                 }
+                canvas = null;
             }
 
             if (is_recording) {
@@ -258,12 +258,13 @@ public class MjpegView extends SurfaceView{
                 }
                 run_loop();
             }
-            catch (Exception e){
-                last_thread_exception = e;
+            catch (IOException e){
                 Log.e("Restarting draw loop", "got exception: ", e);
                 continue; // try again
             }
-            last_thread_exception = null;
+            catch (Exception e) {
+                Log.e("kuku", "can't handle, pls restart me", e);
+            }
             break;
         }
     }
@@ -274,17 +275,14 @@ public class MjpegView extends SurfaceView{
         thread = new Thread(this::connect);
         is_run = true;
         thread.start();
-        if (last_thread_exception != null) {
-            Log.e("Too many restarts", "Got exception: " + Arrays.toString(last_thread_exception.getStackTrace()));
-        }
     }
 
     public void stopPlayback()  {
-        is_run = false;
         if (thread != null) {
             thread.interrupt();
             thread = null;
         }
+        is_run = false;
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {

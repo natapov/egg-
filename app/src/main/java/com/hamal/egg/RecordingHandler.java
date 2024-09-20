@@ -33,6 +33,7 @@ public class RecordingHandler {
             throw new RuntimeException(e);
         }
     }
+
     private File createSavingFile(String postfix, String extension) {
         Date date = new Date();
 
