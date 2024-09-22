@@ -18,12 +18,13 @@ import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 public class MjpegView extends SurfaceView{
-    private final static int HEADER_MAX_LENGTH = 100;
+    private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
     final static int stroke_width = 4;
     final static int frame_offset = stroke_width/2;
     static final int default_width = 640;
@@ -72,8 +73,8 @@ public class MjpegView extends SurfaceView{
                     holder.unlockCanvasAndPost(null);
                 }
                 catch (Exception ignored){}
-//                stopPlayback();
-//                setRecording(false);
+                //stopPlayback();
+                setRecording(false);
             }
         });
     }
@@ -151,9 +152,13 @@ public class MjpegView extends SurfaceView{
                 assert frame_buffer != null;
                 assert (frame_buffer.length > 0);
             }
+            catch (InterruptedIOException e){
+                return;
+            }
             catch (IOException e){
                 read_exception = e;
                 frame_paint.setColor(Color.RED);
+
             }
             finally {
                 if (sharedPreferences.getBoolean("reconnect_mode", true)) {
@@ -187,7 +192,9 @@ public class MjpegView extends SurfaceView{
                         dest_rect.right + frame_offset,
                         dest_rect.bottom + frame_offset,
                         frame_paint);
-                canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+                if (bm != null) {
+                    canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+                }
                 if (sharedPreferences.getBoolean("show_fps", true)) {
                     if (ovl != null) {
                         int height = dest_rect.bottom - ovl.getHeight();
@@ -236,10 +243,10 @@ public class MjpegView extends SurfaceView{
     public boolean toggleRecording(){
         return setRecording(!is_recording);
     }
-    public boolean setRecording(boolean on) {
-        if (is_recording != on) {
-            is_recording = on;
-            if (is_recording)
+    public boolean setRecording(boolean new_state) {
+        if (is_recording != new_state) {
+            is_recording = new_state;
+            if (new_state)
                 recording_handler.startRecording(cam_name);
             else
                 recording_handler.stopRecording();
@@ -289,6 +296,11 @@ public class MjpegView extends SurfaceView{
 
     public void stopPlayback()  {
         is_run = false;
+        try {
+            thread.join(10);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         thread.interrupt();
         thread = null;
     }
