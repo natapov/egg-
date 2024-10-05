@@ -27,8 +27,8 @@ public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
     final static int stroke_width = 4;
     final static int frame_offset = stroke_width/2;
-    static final int default_width = 640;
-    static final int default_height = 360;
+    static final int display_width = 640;
+    static final int display_height = 360;
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
@@ -38,15 +38,16 @@ public class MjpegView extends SurfaceView{
     boolean is_recording;
     Rect dest_rect = null;
     Bitmap bm;
-    URL url;
+    URL stream_url;
+    URL config_url;
     BitmapFactory.Options options = new BitmapFactory.Options();
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
-    String m_url_end = null;
+    String port = null;
     public Button recording_button = null;
     MainActivity ip_provider = null;
     Paint fpsPaint = null;
-    SharedPreferences sharedPreferences = null;
+    final SharedPreferences sharedPreferences;
     String cam_name;
     private static final String TAG = "MjpegView";
 
@@ -63,7 +64,7 @@ public class MjpegView extends SurfaceView{
         this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                dest_rect = destRect(default_width, default_height);
+                dest_rect = destRect(display_width, display_height);
             }
             @Override
             public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
@@ -80,8 +81,17 @@ public class MjpegView extends SurfaceView{
             }
         });
     }
-    public void prepare_connection() throws IOException {
-        connection = (HttpURLConnection) url.openConnection();
+
+    public void actually_connect_to_egg() throws IOException {
+
+//        HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
+//        configConnection.setConnectTimeout(30000);
+//        configConnection.setRequestMethod("GET");
+//        configConnection.setReadTimeout(30000);
+//        int responseCode = configConnection.getResponseCode();
+//        configConnection.disconnect();
+
+        connection = (HttpURLConnection) stream_url.openConnection();
         connection.setDoInput(true);
         connection.setConnectTimeout(300);
         connection.setReadTimeout(300);
@@ -148,7 +158,7 @@ public class MjpegView extends SurfaceView{
         while(is_run){
             try {
                 if (sharedPreferences.getBoolean("reconnect_mode", true)){
-                    prepare_connection();
+                    actually_connect_to_egg();
                 }
                 frame_buffer = read_frame();
                 assert frame_buffer != null;
@@ -266,15 +276,17 @@ public class MjpegView extends SurfaceView{
         for(int i = 0;; i++) {
             startTether(); // check that tethering is on
             try {
-                String url_string = "http://" + ip_provider.get_ip() + m_url_end;
+                String url_string = "http://" + ip_provider.get_ip() + port + "/stream.mjpg";
+                String config_string = "http://" + ip_provider.get_ip() + port + "/config?" + "fps=" + "12" + "&resx=" + SettingsFragment.getXSize(sharedPreferences) + "&resy=" + SettingsFragment.getYSize(sharedPreferences);
                 try {
-                    url = new URL(url_string);
+                    config_url = new URL(config_string); // todo exception
+                    stream_url = new URL(url_string);
                 } catch (MalformedURLException e) {
                     Log.e(TAG, "Bad url given:" + url_string, e);
                     return;
                 }
                 if (!sharedPreferences.getBoolean("reconnect_mode", true)) {
-                    prepare_connection();
+                    actually_connect_to_egg();
                 }
                 run_loop();
             }
@@ -295,7 +307,7 @@ public class MjpegView extends SurfaceView{
     }
 
     public void startPlayback(MainActivity model, String url_end) {
-        m_url_end = url_end;
+        port = url_end;
         ip_provider = model;
         thread = new Thread(this::connect);
         is_run = true;

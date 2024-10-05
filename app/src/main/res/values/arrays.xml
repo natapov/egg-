@@ -1,0 +1,7 @@
+<!-- res/values/arrays.xml -->
+<resources>
+    <string-array name="quality_options">
+        <item>Low</item>
+        <item>Medium</item>
+    </string-array>
+</resources>

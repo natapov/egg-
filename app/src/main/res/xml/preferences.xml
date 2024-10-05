@@ -18,16 +18,17 @@
             android:title="Record all"
             android:summary="Always record all cameras when on"
             android:defaultValue="false" />
+        <ListPreference
+            android:key="quality"
+            android:title="Default camera quality in the 3 camera screen"
+            android:summary="Select how often to check for updates"
+            android:entries="@array/quality_options"
+            android:entryValues="@array/quality_options"
+            android:defaultValue="Low" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Info">
-<!--        <ListPreference-->
-<!--            android:key="update_interval"-->
-<!--            android:title="Update Interval"-->
-<!--            android:summary="Select how often to check for updates"-->
-<!--            android:entries="@array/update_intervals"-->
-<!--            android:entryValues="@array/update_interval_values"-->
-<!--            android:defaultValue="3600000" />-->
+    <PreferenceCategory android:title="info">
+
 
         <Preference
             android:key="egg_ip"

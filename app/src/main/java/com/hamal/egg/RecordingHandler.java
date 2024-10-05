@@ -2,23 +2,30 @@ package com.hamal.egg;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
+
+import androidx.preference.PreferenceManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class RecordingHandler {
-    private static final String TAG = "MjpegRecordingHandler";
-    private final Context context;
+    static final String TAG = "MjpegRecordingHandler";
+    final Context context;
+    final SharedPreferences sharedPreferences;
+
     public RecordingHandler(Context context) {
         this.context = context;
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
     }
     MJPEGGenerator m = null;
     public void startRecording(String cam_name) {
         try {
             File mjpegFilePath = createSavingFile(cam_name, "avi");
-            m = new MJPEGGenerator(mjpegFilePath, 320, 180, 12.0);
+            m = new MJPEGGenerator(mjpegFilePath, SettingsFragment.getXSize(sharedPreferences), SettingsFragment.getYSize(sharedPreferences), 12.0);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
         }
