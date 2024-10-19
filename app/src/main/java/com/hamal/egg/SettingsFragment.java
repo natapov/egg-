@@ -34,6 +34,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }
 
     }
+
+
     public static int getXSize(@NonNull SharedPreferences sharedPreferences) {
         switch (sharedPreferences.getString("quality","Low")) {
             case "Low":

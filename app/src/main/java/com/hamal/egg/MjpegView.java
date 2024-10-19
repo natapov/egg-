@@ -39,7 +39,6 @@ public class MjpegView extends SurfaceView{
     Rect dest_rect = null;
     Bitmap bm;
     URL stream_url;
-    URL config_url;
     BitmapFactory.Options options = new BitmapFactory.Options();
     RecordingHandler  recording_handler;
     DataInputStream data_input = null;
@@ -50,17 +49,19 @@ public class MjpegView extends SurfaceView{
     final SharedPreferences sharedPreferences;
     String cam_name;
     private static final String TAG = "MjpegView";
+    private String ip;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
         recording_handler = new RecordingHandler(context);
-        options.inMutable = true;
         fpsPaint = new Paint();
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         cam_name = getResources().getResourceEntryName(getId());
-
+        bm = Bitmap.createBitmap(display_width, display_height, Bitmap.Config.ARGB_8888); // max size bm for reuse
+        options.inMutable = true;
+        options.inBitmap = bm;
         this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -82,15 +83,27 @@ public class MjpegView extends SurfaceView{
         });
     }
 
+    public void change_quality_if_needed() {
+        int x_size = SettingsFragment.getXSize(sharedPreferences);
+        assert bm != null;
+        if (x_size != bm.getWidth()){
+            try {
+                String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + SettingsFragment.getYSize(sharedPreferences);
+                URL config_url = new URL(config_string); // todo exception
+                HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
+                configConnection.setConnectTimeout(30000);
+                configConnection.setRequestMethod("GET");
+                configConnection.setReadTimeout(30000);
+                int responseCode = configConnection.getResponseCode();
+                configConnection.disconnect();
+            }
+            catch (IOException e){
+                Log.w(TAG, "Error when trying to change config", e);
+            }
+        }
+    }
+
     public void actually_connect_to_egg() throws IOException {
-
-//        HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
-//        configConnection.setConnectTimeout(30000);
-//        configConnection.setRequestMethod("GET");
-//        configConnection.setReadTimeout(30000);
-//        int responseCode = configConnection.getResponseCode();
-//        configConnection.disconnect();
-
         connection = (HttpURLConnection) stream_url.openConnection();
         connection.setDoInput(true);
         connection.setConnectTimeout(300);
@@ -145,7 +158,6 @@ public class MjpegView extends SurfaceView{
         return bm;
     }
     public void run_loop() throws Exception {
-        boolean first_frame = true;
         Canvas canvas = null;
         Paint frame_paint = new Paint();
         frame_paint.setStyle(Paint.Style.STROKE);
@@ -186,14 +198,9 @@ public class MjpegView extends SurfaceView{
             }
             if (read_exception == null) {
                 assert frame_buffer != null;
+                assert bm != null;
                 bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
-                if (bm == null) {
-                    Log.w(TAG, "failed to create bitmap, skipping render");
-                    continue;
-                }
-                if (first_frame) {
-                    options.inBitmap = bm; //reuse bm after first time
-                }
+                change_quality_if_needed();
                 frame_paint.setColor(Color.GRAY);
             }
             try {
@@ -210,23 +217,23 @@ public class MjpegView extends SurfaceView{
                         frame_paint);
                 if (bm != null) {
                     canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
-                }
-                if (sharedPreferences.getBoolean("show_fps", true)) {
-                    if (ovl != null) {
-                        int height = dest_rect.bottom - ovl.getHeight();
-                        int width = dest_rect.right - ovl.getWidth();
-                        canvas.drawBitmap(ovl, width, height, null);
-                    }
-                    frame_count++;
+                    if (sharedPreferences.getBoolean("show_fps", true)) {
+                        if (ovl != null) {
+                            int height = dest_rect.bottom - ovl.getHeight();
+                            int width = dest_rect.right - ovl.getWidth();
+                            canvas.drawBitmap(ovl, width, height, null);
+                        }
+                        frame_count++;
 
-                    long current_time = System.currentTimeMillis();
-                    long delta = current_time - last_print_time;
-                    if (delta >= 1000) {
-                        float actual_fps = frame_count/(delta/1000f);
-                        String fps_text = String.format("%.2f", actual_fps) + "fps";
-                        ovl = makeFpsOverlay(fpsPaint, fps_text);
-                        last_print_time = current_time;
-                        frame_count = 0;
+                        long current_time = System.currentTimeMillis();
+                        long delta = current_time - last_print_time;
+                        if (delta >= 1000) {
+                            float actual_fps = frame_count / (delta / 1000f);
+                            String fps_text = String.format("%.2f", actual_fps) + "fps " + bm.getWidth() + "x" + bm.getHeight();
+                            ovl = makeFpsOverlay(fpsPaint, fps_text);
+                            last_print_time = current_time;
+                            frame_count = 0;
+                        }
                     }
                 }
             }
@@ -276,10 +283,9 @@ public class MjpegView extends SurfaceView{
         for(int i = 0;; i++) {
             startTether(); // check that tethering is on
             try {
-                String url_string = "http://" + ip_provider.get_ip() + port + "/stream.mjpg";
-                String config_string = "http://" + ip_provider.get_ip() + port + "/config?" + "fps=" + "12" + "&resx=" + SettingsFragment.getXSize(sharedPreferences) + "&resy=" + SettingsFragment.getYSize(sharedPreferences);
+                ip = ip_provider.get_ip();
+                String url_string = "http://" + ip + port + "/stream.mjpg";
                 try {
-                    config_url = new URL(config_string); // todo exception
                     stream_url = new URL(url_string);
                 } catch (MalformedURLException e) {
                     Log.e(TAG, "Bad url given:" + url_string, e);
