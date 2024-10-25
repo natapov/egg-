@@ -63,9 +63,9 @@ public class DashboardFragment extends Fragment {
         super.onResume();
         MainActivity activity = (MainActivity) context;
         assert activity != null;
-        binding.cam1.startPlayback(activity, ":8008", binding.frame1);
-        binding.cam2.startPlayback(activity, ":9800", binding.frame2);
-        binding.cam3.startPlayback(activity, ":9801", binding.frame3);
+        binding.cam1.startPlayback(activity, ":8008", binding.frame1, 640, 360);
+        binding.cam2.startPlayback(activity, ":9800", binding.frame2, 640, 360);
+        binding.cam3.startPlayback(activity, ":9801", binding.frame3, 640, 360);
     }
 
     @Override

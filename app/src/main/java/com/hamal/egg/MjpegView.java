@@ -27,8 +27,6 @@ import java.net.URL;
 
 public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
-    static final int display_width = 640;
-    static final int display_height = 360;
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
@@ -36,7 +34,6 @@ public class MjpegView extends SurfaceView{
     HttpURLConnection connection = null;
     boolean is_run = false;
     boolean is_recording;
-    Rect dest_rect = null;
     Bitmap bm;
     URL stream_url;
     BitmapFactory.Options options = new BitmapFactory.Options();
@@ -60,13 +57,9 @@ public class MjpegView extends SurfaceView{
         fpsPaint.setTextSize(12);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         cam_name = getResources().getResourceEntryName(getId());
-        bm = Bitmap.createBitmap(display_width, display_height, Bitmap.Config.ARGB_8888); // max size bm for reuse
-        options.inMutable = true;
-        options.inBitmap = bm;
         this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                dest_rect = destRect(display_width, display_height);
             }
             @Override
             public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
@@ -138,9 +131,7 @@ public class MjpegView extends SurfaceView{
         return frameBuffer;
     }
     private Rect destRect(int bmw, int bmh) {
-        final int x = (getWidth() / 2) - (bmw / 2);
-        final int y = (getHeight() / 2) - (bmh / 2);
-        return new Rect(x, y, bmw + x, bmh + y);
+        return new Rect(0, 0, bmw, bmh);
     }
     private Bitmap makeFpsOverlay(Paint p, String text) {
         Rect b = new Rect();
@@ -201,11 +192,11 @@ public class MjpegView extends SurfaceView{
                     continue;
                 }
                 if (bm != null) {
-                    canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
+                    canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
                     if (sharedPreferences.getBoolean("show_fps", true)) {
                         if (ovl != null) {
-                            int height = dest_rect.bottom - ovl.getHeight();
-                            int width = dest_rect.right - ovl.getWidth();
+                            int height = getHeight() - ovl.getHeight();
+                            int width = getWidth() - ovl.getWidth();
                             canvas.drawBitmap(ovl, width, height, null);
                         }
                         frame_count++;
@@ -293,12 +284,15 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(MainActivity model, String url_end, FrameLayout frame) {
+    public void startPlayback(MainActivity model, String url_end, FrameLayout frame, int width, int height) {
         camera_frame = frame;
         port = url_end;
         ip_provider = model;
         thread = new Thread(this::connect);
         is_run = true;
+        bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
+        options.inMutable = true;
+        options.inBitmap = bm;
         thread.start();
     }
 
