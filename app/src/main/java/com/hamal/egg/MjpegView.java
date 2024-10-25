@@ -13,6 +13,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
+import android.widget.FrameLayout;
+
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
@@ -48,6 +50,7 @@ public class MjpegView extends SurfaceView{
     String cam_name;
     private static final String TAG = "MjpegView";
     private String ip;
+    private FrameLayout camera_frame;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -157,7 +160,6 @@ public class MjpegView extends SurfaceView{
     }
     public void run_loop() throws Exception {
         Canvas canvas = null;
-        IOException read_exception = null;
         Bitmap ovl = null;
         long last_print_time = 0;
         int frame_count = 0;
@@ -171,17 +173,12 @@ public class MjpegView extends SurfaceView{
                 assert frame_buffer != null;
                 assert (frame_buffer.length > 0);
             }
-            catch (InterruptedIOException e){
+            catch (IOException e){
+                camera_frame.setBackgroundColor(Color.RED);
                 if (!is_run){
-                    // time to die
                     return;
                 }
                 throw e;
-            }
-            catch (IOException e){
-                read_exception = e;
-                //frame_paint.setColor(Color.RED);
-
             }
             finally {
                 if (sharedPreferences.getBoolean("reconnect_mode", true)) {
@@ -191,13 +188,11 @@ public class MjpegView extends SurfaceView{
                     }
                 }
             }
-            if (read_exception == null) {
-                assert frame_buffer != null;
-                assert bm != null;
-                bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
-                change_quality_if_needed();
-                //frame_paint.setColor(Color.GRAY);
-            }
+            camera_frame.setBackgroundColor(Color.GRAY);
+            assert frame_buffer != null;
+            assert bm != null;
+            bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
+            change_quality_if_needed();
             try {
                 canvas = this.getHolder().lockCanvas();
                 if (canvas == null) {
@@ -238,9 +233,6 @@ public class MjpegView extends SurfaceView{
                 }
                 canvas = null;
             }
-            if(read_exception != null){
-                throw read_exception;
-            }
             if (is_recording) {
                 try {
                     assert frame_buffer != null;
@@ -250,7 +242,6 @@ public class MjpegView extends SurfaceView{
                     Log.e(TAG, "exception occurred while recording frame", recording_e);
                 }
             }
-            frame_buffer = null;
         }
     }
     public boolean toggleRecording(){
@@ -302,7 +293,8 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(MainActivity model, String url_end) {
+    public void startPlayback(MainActivity model, String url_end, FrameLayout frame) {
+        camera_frame = frame;
         port = url_end;
         ip_provider = model;
         thread = new Thread(this::connect);
