@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
-
     android:id="@+id/zoom_box"
     android:background="@android:color/black"
     app:layout_constraintBottom_toTopOf="@+id/box_2"
@@ -14,14 +12,23 @@
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toTopOf="parent">
 
-    <com.hamal.egg.MjpegView
-        android:id="@+id/cam_1"
-        android:layout_width="@dimen/default_cam_width"
-        android:layout_height="@dimen/default_cam_height"
+    <FrameLayout
+        android:id="@+id/camera_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/darker_gray"
+        android:padding="2dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/record_button_1"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.hamal.egg.MjpegView
+            android:id="@+id/cam_1"
+            android:layout_width="@dimen/default_cam_width"
+            android:layout_height="@dimen/default_cam_height" />
+
+    </FrameLayout>
 
     <Button
         android:id="@+id/record_button_1"
@@ -30,7 +37,7 @@
         android:background="@drawable/record_button_background"
         android:text="rec"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/cam_1"
+        app:layout_constraintStart_toEndOf="@+id/camera_frame"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/zoom_button_1" />
 
@@ -41,7 +48,7 @@
         android:background="@drawable/zoom_button_background"
         android:text="zoom"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/cam_1"
+        app:layout_constraintStart_toEndOf="@+id/camera_frame"
         app:layout_constraintTop_toBottomOf="@+id/record_button_1"
         app:layout_constraintBottom_toBottomOf="parent" />
 

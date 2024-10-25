@@ -25,8 +25,6 @@ import java.net.URL;
 
 public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
-    final static int stroke_width = 4;
-    final static int frame_offset = stroke_width/2;
     static final int display_width = 640;
     static final int display_height = 360;
     private static final Object tethering_lock = new Object();
@@ -159,9 +157,6 @@ public class MjpegView extends SurfaceView{
     }
     public void run_loop() throws Exception {
         Canvas canvas = null;
-        Paint frame_paint = new Paint();
-        frame_paint.setStyle(Paint.Style.STROKE);
-        frame_paint.setStrokeWidth(stroke_width);
         IOException read_exception = null;
         Bitmap ovl = null;
         long last_print_time = 0;
@@ -185,7 +180,7 @@ public class MjpegView extends SurfaceView{
             }
             catch (IOException e){
                 read_exception = e;
-                frame_paint.setColor(Color.RED);
+                //frame_paint.setColor(Color.RED);
 
             }
             finally {
@@ -201,7 +196,7 @@ public class MjpegView extends SurfaceView{
                 assert bm != null;
                 bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
                 change_quality_if_needed();
-                frame_paint.setColor(Color.GRAY);
+                //frame_paint.setColor(Color.GRAY);
             }
             try {
                 canvas = this.getHolder().lockCanvas();
@@ -210,11 +205,6 @@ public class MjpegView extends SurfaceView{
                     Log.w(TAG, "null canvas, skipping render");
                     continue;
                 }
-                canvas.drawRect(dest_rect.left - frame_offset,
-                        dest_rect.top - frame_offset,
-                        dest_rect.right + frame_offset,
-                        dest_rect.bottom + frame_offset,
-                        frame_paint);
                 if (bm != null) {
                     canvas.drawBitmap(bm, null, dest_rect, null); // redraw the last frame even if fail, otherwise will show on even older frame that's still on the backbuffer
                     if (sharedPreferences.getBoolean("show_fps", true)) {
