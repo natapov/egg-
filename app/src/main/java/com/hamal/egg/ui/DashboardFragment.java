@@ -7,8 +7,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.preference.PreferenceManager;
 import com.hamal.egg.MainActivity;
+import com.hamal.egg.R;
 import com.hamal.egg.databinding.CameraViewBinding;
 
 public class DashboardFragment extends Fragment {
@@ -47,6 +51,10 @@ public class DashboardFragment extends Fragment {
                 binding.cam1.setRecording(is_recording);
                 binding.cam2.setRecording(is_recording);
             }
+        });
+        binding.zoomButton1.setOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.action_dashboard_to_zoom);
         });
         return binding.getRoot();
     }
