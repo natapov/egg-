@@ -22,6 +22,10 @@ public class MainActivity extends AppCompatActivity {
         thread = new Thread(this::listen_for_ip);
         thread.start();
     }
+    public MjpegView cam1;
+    public MjpegView cam2;
+    public MjpegView cam3;
+
 
     public void listen_for_ip() {
         DatagramSocket socket = null;
@@ -73,6 +77,12 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupWithNavController(binding.navView, navController);
         Start();
+
+
+        cam1 = new MjpegView(this, null);
+        cam2 = new MjpegView(this, null);
+        cam3 = new MjpegView(this, null);
+
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.hamal.egg.ui;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.hamal.egg.MainActivity;
+import com.hamal.egg.R;
 import com.hamal.egg.databinding.ZoomViewBinding;
 
 
@@ -31,7 +33,10 @@ public class ZoomFragment extends Fragment {
         super.onResume();
         MainActivity activity = (MainActivity) context;
         assert activity != null;
-        binding.cam1.startPlayback(activity, ":8008", binding.cameraFrame, 640, 360);
+        Resources res = getResources();
+        String parameter = getArguments().getString("parameterName");
+
+        binding.cam1.startPlayback(activity, ":8008", binding.cameraFrame,res.getDimensionPixelOffset(R.dimen.zoom_cam_width), res.getDimensionPixelOffset(R.dimen.zoom_cam_height), true);
     }
 
     @Override

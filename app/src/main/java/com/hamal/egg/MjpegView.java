@@ -48,6 +48,7 @@ public class MjpegView extends SurfaceView{
     private static final String TAG = "MjpegView";
     private String ip;
     private FrameLayout camera_frame;
+    private boolean rotate;
 
     public MjpegView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -56,7 +57,7 @@ public class MjpegView extends SurfaceView{
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        cam_name = getResources().getResourceEntryName(getId());
+        cam_name = "kuku";
         this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -186,18 +187,23 @@ public class MjpegView extends SurfaceView{
             change_quality_if_needed();
             try {
                 canvas = this.getHolder().lockCanvas();
+
                 if (canvas == null) {
 
                     Log.w(TAG, "null canvas, skipping render");
                     continue;
                 }
                 if (bm != null) {
+                    canvas.save();
+                    if (rotate) {
+                        canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
+                    }
                     canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
+                    canvas.restore();
+
                     if (sharedPreferences.getBoolean("show_fps", true)) {
                         if (ovl != null) {
-                            int height = getHeight() - ovl.getHeight();
-                            int width = getWidth() - ovl.getWidth();
-                            canvas.drawBitmap(ovl, width, height, null);
+                            canvas.drawBitmap(ovl, canvas.getWidth() - ovl.getWidth(), canvas.getHeight() - ovl.getHeight(),  null);
                         }
                         frame_count++;
 
@@ -284,11 +290,12 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(MainActivity model, String url_end, FrameLayout frame, int width, int height) {
+    public void startPlayback(MainActivity model, String url_end, FrameLayout frame, int width, int height, boolean rotate_cam) {
         camera_frame = frame;
         port = url_end;
         ip_provider = model;
         thread = new Thread(this::connect);
+        rotate = rotate_cam;
         is_run = true;
         bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
         options.inMutable = true;

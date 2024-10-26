@@ -28,13 +28,13 @@
             app:layout_constraintEnd_toStartOf="@+id/record_button_1"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
-
-            <com.hamal.egg.MjpegView
-                android:id="@+id/cam_1"
+            <FrameLayout
+                android:id="@+id/cam_holder_1"
                 android:layout_width="@dimen/default_cam_width"
-                android:layout_height="@dimen/default_cam_height" />
-
-        </FrameLayout>
+                android:layout_height="@dimen/default_cam_height"
+                android:background="@android:color/black">
+            </FrameLayout>
+    </FrameLayout>
 
         <Button
             android:id="@+id/record_button_1"
@@ -61,15 +61,16 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/box_2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@android:color/black"
-
-        app:layout_constraintTop_toBottomOf="@+id/box_1"
-        app:layout_constraintBottom_toTopOf="@+id/box_3">
-
+        app:layout_constraintBottom_toTopOf="@+id/box_3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/box_1">
 
         <FrameLayout
             android:id="@+id/frame_2"
@@ -81,10 +82,12 @@
             app:layout_constraintEnd_toStartOf="@+id/record_button_2"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
-            <com.hamal.egg.MjpegView
-                android:id="@+id/cam_2"
+            <FrameLayout
+                android:id="@+id/cam_holder_2"
                 android:layout_width="@dimen/default_cam_width"
-                android:layout_height="@dimen/default_cam_height" />
+                android:layout_height="@dimen/default_cam_height"
+                android:background="@android:color/black">
+            </FrameLayout>
         </FrameLayout>
 
         <Button
@@ -96,6 +99,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/frame_2"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/zoom_button_2" />
+
+        <Button
+            android:id="@+id/zoom_button_2"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/zoom_button_background"
+            android:text="zoom"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/frame_2"
+            app:layout_constraintTop_toBottomOf="@+id/record_button_2"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -105,10 +119,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@android:color/black"
-        app:layout_constraintTop_toBottomOf="@+id/box_2"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/box_2">
 
         <FrameLayout
             android:id="@+id/frame_3"
@@ -120,10 +134,12 @@
             app:layout_constraintEnd_toStartOf="@+id/record_button_3"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
-            <com.hamal.egg.MjpegView
-                android:id="@+id/cam_3"
+            <FrameLayout
+                android:id="@+id/cam_holder_3"
                 android:layout_width="@dimen/default_cam_width"
-                android:layout_height="@dimen/default_cam_height" />
+                android:layout_height="@dimen/default_cam_height"
+                android:background="@android:color/black">
+            </FrameLayout>
         </FrameLayout>
 
         <Button
@@ -135,10 +151,18 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/frame_3"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/zoom_button_3" />
+
+        <Button
+            android:id="@+id/zoom_button_3"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/zoom_button_background"
+            android:text="zoom"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/frame_3"
+            app:layout_constraintTop_toBottomOf="@+id/record_button_3"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>

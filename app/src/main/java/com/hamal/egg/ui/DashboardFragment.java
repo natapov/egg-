@@ -1,16 +1,18 @@
 package com.hamal.egg.ui;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.preference.PreferenceManager;
+
+import com.hamal.egg.CamerasModel;
 import com.hamal.egg.MainActivity;
 import com.hamal.egg.R;
 import com.hamal.egg.databinding.CameraViewBinding;
@@ -19,42 +21,49 @@ public class DashboardFragment extends Fragment {
     private CameraViewBinding binding;
     SharedPreferences sharedPreferences;
     Context context;
-
+    CamerasModel model = new CamerasModel();
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         binding = CameraViewBinding.inflate(inflater, container, false);
-        context = requireContext();
+        context =  requireContext();
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        model.initializeCameras(context);
+        binding.camHolder1.addView(model.camera1);
+        binding.camHolder2.addView(model.camera2);
+        binding.camHolder3.addView(model.camera3);
+
         // link the cameras to their buttons, they are in charge of maintaining correct button state
-        binding.cam1.recording_button = binding.recordButton1;
-        binding.cam2.recording_button = binding.recordButton2;
-        binding.cam3.recording_button = binding.recordButton3;
+        model.camera1.recording_button = binding.recordButton1;
+        model.camera2.recording_button = binding.recordButton2;
+        model.camera3.recording_button = binding.recordButton3;
 
         binding.recordButton1.setOnClickListener(n -> {
-            boolean is_recording = binding.cam1.toggleRecording();
+            boolean is_recording = model.camera1.toggleRecording();
             if (sharedPreferences.getBoolean("record_all", true)) {
-                binding.cam2.setRecording(is_recording);
-                binding.cam3.setRecording(is_recording);
+                model.camera2.setRecording(is_recording);
+                model.camera3.setRecording(is_recording);
             }
         });
         binding.recordButton2.setOnClickListener(n -> {
-            boolean is_recording = binding.cam2.toggleRecording();
+            boolean is_recording = model.camera2.toggleRecording();
             if (sharedPreferences.getBoolean("record_all", true)) {
-                binding.cam1.setRecording(is_recording);
-                binding.cam3.setRecording(is_recording);
+                model.camera1.setRecording(is_recording);
+                model.camera3.setRecording(is_recording);
             }
         });
         binding.recordButton3.setOnClickListener(n -> {
-            boolean is_recording = binding.cam3.toggleRecording();
+            boolean is_recording = model.camera3.toggleRecording();
             if (sharedPreferences.getBoolean("record_all", true)) {
-                binding.cam1.setRecording(is_recording);
-                binding.cam2.setRecording(is_recording);
+                model.camera1.setRecording(is_recording);
+                model.camera2.setRecording(is_recording);
             }
         });
         binding.zoomButton1.setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putString("parameterName", "parameterValue");
             NavController navController = Navigation.findNavController(v);
-            navController.navigate(R.id.action_dashboard_to_zoom);
+            navController.navigate(R.id.action_dashboard_to_zoom, bundle);
         });
         return binding.getRoot();
     }
@@ -63,17 +72,26 @@ public class DashboardFragment extends Fragment {
         super.onResume();
         MainActivity activity = (MainActivity) context;
         assert activity != null;
-        binding.cam1.startPlayback(activity, ":8008", binding.frame1, 640, 360);
-        binding.cam2.startPlayback(activity, ":9800", binding.frame2, 640, 360);
-        binding.cam3.startPlayback(activity, ":9801", binding.frame3, 640, 360);
+        Resources res = getResources();
+        model.camera1.startPlayback(activity, ":8008", binding.frame1,
+                res.getDimensionPixelOffset(R.dimen.zoom_cam_width),
+                res.getDimensionPixelOffset(R.dimen.zoom_cam_height),
+                false);
+        model.camera2.startPlayback(activity, ":9800", binding.frame2,
+                res.getDimensionPixelOffset(R.dimen.zoom_cam_width),
+                res.getDimensionPixelOffset(R.dimen.zoom_cam_height),
+                false);
+        model.camera3.startPlayback(activity, ":9801", binding.frame3,
+                res.getDimensionPixelOffset(R.dimen.zoom_cam_width),
+                res.getDimensionPixelOffset(R.dimen.zoom_cam_height),
+                false);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        binding.cam1.stopPlayback();
-        binding.cam2.stopPlayback();
-        binding.cam3.stopPlayback();
+        model.camera1.stopPlayback();
+        model.camera2.stopPlayback();
+        model.camera3.stopPlayback();
     }
-
 }

@@ -30,4 +30,5 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui:2.8.0'
     implementation 'androidx.preference:preference:1.2.1'
     implementation 'org.videolan.android:libvlc-all:3.5.1'
+    implementation libs.lifecycle.viewmodel.android
 }

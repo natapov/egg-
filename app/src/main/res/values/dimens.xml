@@ -4,6 +4,10 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="default_cam_width">640px</dimen>
     <dimen name="default_cam_height">360px</dimen>
+<!--    <dimen name="zoom_cam_width">768px</dimen>-->
+<!--    <dimen name="zoom_cam_height">1366px</dimen>-->
+    <dimen name="zoom_cam_width">540px</dimen>
+    <dimen name="zoom_cam_height">960px</dimen>
     <dimen name="cam_border_width">4px</dimen>
     <dimen name="button_size">48dp</dimen>
 
