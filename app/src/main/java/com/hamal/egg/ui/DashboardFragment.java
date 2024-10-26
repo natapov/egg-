@@ -73,18 +73,9 @@ public class DashboardFragment extends Fragment {
         MainActivity activity = (MainActivity) context;
         assert activity != null;
         Resources res = getResources();
-        model.camera1.startPlayback(activity, ":8008", binding.frame1,
-                res.getDimensionPixelOffset(R.dimen.zoom_cam_width),
-                res.getDimensionPixelOffset(R.dimen.zoom_cam_height),
-                false);
-        model.camera2.startPlayback(activity, ":9800", binding.frame2,
-                res.getDimensionPixelOffset(R.dimen.zoom_cam_width),
-                res.getDimensionPixelOffset(R.dimen.zoom_cam_height),
-                false);
-        model.camera3.startPlayback(activity, ":9801", binding.frame3,
-                res.getDimensionPixelOffset(R.dimen.zoom_cam_width),
-                res.getDimensionPixelOffset(R.dimen.zoom_cam_height),
-                false);
+        model.camera1.startPlayback(binding.frame1,false);
+        model.camera2.startPlayback(binding.frame2,false);
+        model.camera3.startPlayback(binding.frame3,false);
     }
 
     @Override
@@ -93,5 +84,12 @@ public class DashboardFragment extends Fragment {
         model.camera1.stopPlayback();
         model.camera2.stopPlayback();
         model.camera3.stopPlayback();
+        binding.camHolder1.removeView(model.camera1);
+        binding.camHolder2.removeView(model.camera2);
+        binding.camHolder3.removeView(model.camera3);
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 }

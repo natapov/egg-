@@ -50,14 +50,23 @@ public class MjpegView extends SurfaceView{
     private FrameLayout camera_frame;
     private boolean rotate;
 
-    public MjpegView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+
+    public MjpegView(Context context, String name, MainActivity model, String url_end, int width, int height) {
+        super(context, null);
         recording_handler = new RecordingHandler(context);
         fpsPaint = new Paint();
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        cam_name = "kuku";
+        cam_name = name;
+        port = url_end;
+        ip_provider = model;
+        bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
+        options.inMutable = true;
+        options.inBitmap = bm;
+
+
+
         this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -76,6 +85,8 @@ public class MjpegView extends SurfaceView{
                 setRecording(false);
             }
         });
+
+
     }
 
     public void change_quality_if_needed() {
@@ -290,16 +301,11 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void startPlayback(MainActivity model, String url_end, FrameLayout frame, int width, int height, boolean rotate_cam) {
+    public void startPlayback(FrameLayout frame, boolean rotate_cam) {
         camera_frame = frame;
-        port = url_end;
-        ip_provider = model;
-        thread = new Thread(this::connect);
         rotate = rotate_cam;
         is_run = true;
-        bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
-        options.inMutable = true;
-        options.inBitmap = bm;
+        thread = new Thread(this::connect);
         thread.start();
     }
 

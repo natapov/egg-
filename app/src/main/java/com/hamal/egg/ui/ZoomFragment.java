@@ -36,7 +36,7 @@ public class ZoomFragment extends Fragment {
         Resources res = getResources();
         String parameter = getArguments().getString("parameterName");
 
-        binding.cam1.startPlayback(activity, ":8008", binding.cameraFrame,res.getDimensionPixelOffset(R.dimen.zoom_cam_width), res.getDimensionPixelOffset(R.dimen.zoom_cam_height), true);
+        binding.cam1.startPlayback(binding.cameraFrame, true);
     }
 
     @Override
