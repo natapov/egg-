@@ -1,4 +1,6 @@
 package com.hamal.egg;
+import static java.lang.Thread.sleep;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -20,7 +22,6 @@ import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -65,16 +66,11 @@ public class MjpegView extends SurfaceView{
         options.inMutable = true;
         options.inBitmap = bm;
 
-
-
         this.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
-            public void surfaceCreated(@NonNull SurfaceHolder holder) {
-            }
+            public void surfaceCreated(@NonNull SurfaceHolder holder) { }
             @Override
-            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-                // Code to execute when the surface dimensions or format change
-            }
+            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) { }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
                 try {
@@ -89,31 +85,24 @@ public class MjpegView extends SurfaceView{
 
     }
 
-    public void change_quality_if_needed() {
+    public void change_quality_if_needed() throws IOException{
         int x_size = SettingsFragment.getXSize(sharedPreferences);
         assert bm != null;
         if (x_size != bm.getWidth()){
-            try {
-                String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + SettingsFragment.getYSize(sharedPreferences);
-                URL config_url = new URL(config_string); // todo exception
-                HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
-                configConnection.setConnectTimeout(30000);
-                configConnection.setRequestMethod("GET");
-                configConnection.setReadTimeout(30000);
-                int responseCode = configConnection.getResponseCode();
-                configConnection.disconnect();
-            }
-            catch (IOException e){
-                Log.w(TAG, "Error when trying to change config", e);
-            }
+            String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + SettingsFragment.getYSize(sharedPreferences);
+            URL config_url = new URL(config_string); // todo exception
+            HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
+            configConnection.setConnectTimeout(30000);
+            configConnection.setRequestMethod("GET");
+            configConnection.setReadTimeout(30000);
+            int responseCode = configConnection.getResponseCode();
+            configConnection.disconnect();
         }
     }
 
     public void actually_connect_to_egg() throws IOException {
         connection = (HttpURLConnection) stream_url.openConnection();
         connection.setDoInput(true);
-        connection.setConnectTimeout(300);
-        connection.setReadTimeout(300);
         connection.connect();
         data_input = new DataInputStream(connection.getInputStream());
 
@@ -141,9 +130,6 @@ public class MjpegView extends SurfaceView{
         byte[] frameBuffer = new byte[contentLength];
         data_input.readFully(frameBuffer,0, contentLength);
         return frameBuffer;
-    }
-    private Rect destRect(int bmw, int bmh) {
-        return new Rect(0, 0, bmw, bmh);
     }
     private Bitmap makeFpsOverlay(Paint p, String text) {
         Rect b = new Rect();
@@ -177,7 +163,6 @@ public class MjpegView extends SurfaceView{
                 assert (frame_buffer.length > 0);
             }
             catch (IOException e){
-                camera_frame.setBackgroundColor(Color.RED);
                 if (!is_run){
                     return;
                 }
@@ -191,20 +176,18 @@ public class MjpegView extends SurfaceView{
                     }
                 }
             }
-            camera_frame.setBackgroundColor(Color.GRAY);
             assert frame_buffer != null;
             assert bm != null;
             bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
             change_quality_if_needed();
             try {
                 canvas = this.getHolder().lockCanvas();
-
                 if (canvas == null) {
-
                     Log.w(TAG, "null canvas, skipping render");
                     continue;
                 }
                 if (bm != null) {
+                    camera_frame.setBackgroundColor(Color.GRAY);
                     canvas.save();
                     if (rotate) {
                         canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
@@ -287,9 +270,17 @@ public class MjpegView extends SurfaceView{
             }
             catch (InterruptedException e) {
                 Log.e(TAG, "thread interrupted, halting", e);
+                camera_frame.setBackgroundColor(Color.RED);
             }
             catch (Exception e){
                 Log.e(TAG, "Restarting draw loop: ", e);
+                camera_frame.setBackgroundColor(Color.RED);
+                try {
+                    sleep(1);
+                } catch (InterruptedException ex) {
+                    assert(!is_run);
+                    break;
+                }
                 continue; // try again
             }
 //            catch (Exception e) {

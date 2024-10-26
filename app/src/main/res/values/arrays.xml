@@ -3,5 +3,6 @@
     <string-array name="quality_options">
         <item>Low</item>
         <item>Medium</item>
+        <item>High</item>
     </string-array>
 </resources>

@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.hamal.egg.MainActivity;
-import com.hamal.egg.R;
 import com.hamal.egg.databinding.ZoomViewBinding;
 
 
@@ -42,7 +41,6 @@ public class ZoomFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        binding.cam1.stopPlayback();
     }
 
 }

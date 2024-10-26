@@ -26,7 +26,6 @@
             android:id="@+id/cam_1"
             android:layout_width="@dimen/zoom_cam_width"
             android:layout_height="@dimen/zoom_cam_height" />
-
     </FrameLayout>
 
 <!--    <Button-->
