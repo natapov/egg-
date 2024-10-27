@@ -103,6 +103,8 @@ public class MjpegView extends SurfaceView{
     public void actually_connect_to_egg() throws IOException {
         connection = (HttpURLConnection) stream_url.openConnection();
         connection.setDoInput(true);
+        connection.setConnectTimeout(300);
+        connection.setReadTimeout(300);
         connection.connect();
         data_input = new DataInputStream(connection.getInputStream());
 
@@ -163,6 +165,7 @@ public class MjpegView extends SurfaceView{
                 assert (frame_buffer.length > 0);
             }
             catch (IOException e){
+                camera_frame.setBackgroundColor(Color.RED);
                 if (!is_run){
                     return;
                 }
@@ -186,32 +189,30 @@ public class MjpegView extends SurfaceView{
                     Log.w(TAG, "null canvas, skipping render");
                     continue;
                 }
-                if (bm != null) {
-                    camera_frame.setBackgroundColor(Color.GRAY);
-                    canvas.save();
-                    if (rotate) {
-                        canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
+                canvas.save();
+                if (rotate) {
+                    canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
+                }
+                canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
+                canvas.restore();
+
+                if (sharedPreferences.getBoolean("show_fps", true)) {
+                    if (ovl != null) {
+                        canvas.drawBitmap(ovl, canvas.getWidth() - ovl.getWidth(), canvas.getHeight() - ovl.getHeight(),  null);
                     }
-                    canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
-                    canvas.restore();
+                    frame_count++;
 
-                    if (sharedPreferences.getBoolean("show_fps", true)) {
-                        if (ovl != null) {
-                            canvas.drawBitmap(ovl, canvas.getWidth() - ovl.getWidth(), canvas.getHeight() - ovl.getHeight(),  null);
-                        }
-                        frame_count++;
-
-                        long current_time = System.currentTimeMillis();
-                        long delta = current_time - last_print_time;
-                        if (delta >= 1000) {
-                            float actual_fps = frame_count / (delta / 1000f);
-                            String fps_text = String.format("%.2f", actual_fps) + "fps " + bm.getWidth() + "x" + bm.getHeight();
-                            ovl = makeFpsOverlay(fpsPaint, fps_text);
-                            last_print_time = current_time;
-                            frame_count = 0;
-                        }
+                    long current_time = System.currentTimeMillis();
+                    long delta = current_time - last_print_time;
+                    if (delta >= 1000) {
+                        float actual_fps = frame_count / (delta / 1000f);
+                        String fps_text = String.format("%.2f", actual_fps) + "fps " + bm.getWidth() + "x" + bm.getHeight();
+                        ovl = makeFpsOverlay(fpsPaint, fps_text);
+                        last_print_time = current_time;
+                        frame_count = 0;
                     }
                 }
+                camera_frame.setBackgroundColor(Color.GRAY);
             }
             finally {
                 if (canvas != null) {
@@ -278,14 +279,13 @@ public class MjpegView extends SurfaceView{
                 try {
                     sleep(1);
                 } catch (InterruptedException ex) {
+                    Log.e(TAG, "Interrupted exiting: ", e);
+
                     assert(!is_run);
                     break;
                 }
                 continue; // try again
             }
-//            catch (Exception e) {
-//                Log.e("kuku", "can't handle, pls restart me", e);
-//            }
             assert(!is_run);
             Log.i(TAG, "thread terminating: " + Thread.currentThread().getName());
             break;

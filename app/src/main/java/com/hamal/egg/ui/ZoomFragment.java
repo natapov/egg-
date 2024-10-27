@@ -40,8 +40,6 @@ public class ZoomFragment extends Fragment {
         super.onResume();
         MainActivity activity = (MainActivity) context;
         assert activity != null;
-        Resources res = getResources();
-        assert getArguments() != null;
         camera.startPlayback(binding.cameraFrame, true);
     }
 
