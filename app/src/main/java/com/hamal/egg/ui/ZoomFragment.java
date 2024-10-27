@@ -9,7 +9,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
+import com.hamal.egg.CamerasModel;
 import com.hamal.egg.MainActivity;
 import com.hamal.egg.databinding.ZoomViewBinding;
 
@@ -17,6 +19,7 @@ import com.hamal.egg.databinding.ZoomViewBinding;
 public class ZoomFragment extends Fragment {
     private ZoomViewBinding binding;
     Context context;
+    CamerasModel model;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -24,7 +27,9 @@ public class ZoomFragment extends Fragment {
         binding = ZoomViewBinding.inflate(inflater, container, false);
         context = getContext();
         View root = binding.getRoot();
-
+        model = new ViewModelProvider(requireActivity()).get(CamerasModel.class);
+        assert(model.camera1 != null);
+        binding.camHolder.addView(model.camera1);
         return root;
     }
     @Override
@@ -33,14 +38,14 @@ public class ZoomFragment extends Fragment {
         MainActivity activity = (MainActivity) context;
         assert activity != null;
         Resources res = getResources();
-        String parameter = getArguments().getString("parameterName");
+        assert getArguments() != null;
+        int cameraNum = getArguments().getInt("cameraNum");
 
-        binding.cam1.startPlayback(binding.cameraFrame, true);
+        model.camera1.startPlayback(binding.cameraFrame, true);
     }
 
     @Override
     public void onPause() {
         super.onPause();
     }
-
 }

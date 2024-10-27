@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.preference.PreferenceManager;
@@ -21,13 +22,14 @@ public class DashboardFragment extends Fragment {
     private CameraViewBinding binding;
     SharedPreferences sharedPreferences;
     Context context;
-    CamerasModel model = new CamerasModel();
+    CamerasModel model;
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         binding = CameraViewBinding.inflate(inflater, container, false);
         context =  requireContext();
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        model = new ViewModelProvider(requireActivity()).get(CamerasModel.class);
         model.initializeCameras(context);
         binding.camHolder1.addView(model.camera1);
         binding.camHolder2.addView(model.camera2);
@@ -61,7 +63,7 @@ public class DashboardFragment extends Fragment {
         });
         binding.zoomButton1.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
-            bundle.putString("parameterName", "parameterValue");
+            bundle.putInt("cameraNum", 1);
             NavController navController = Navigation.findNavController(v);
             navController.navigate(R.id.action_dashboard_to_zoom, bundle);
         });

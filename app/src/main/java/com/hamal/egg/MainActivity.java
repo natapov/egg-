@@ -22,10 +22,6 @@ public class MainActivity extends AppCompatActivity {
         thread = new Thread(this::listen_for_ip);
         thread.start();
     }
-    public MjpegView cam1;
-    public MjpegView cam2;
-    public MjpegView cam3;
-
 
     public void listen_for_ip() {
         DatagramSocket socket = null;

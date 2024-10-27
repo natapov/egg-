@@ -22,8 +22,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.hamal.egg.MjpegView
-            android:id="@+id/cam_1"
+        <FrameLayout
+            android:id="@+id/cam_holder"
             android:layout_width="@dimen/zoom_cam_width"
             android:layout_height="@dimen/zoom_cam_height" />
     </FrameLayout>
