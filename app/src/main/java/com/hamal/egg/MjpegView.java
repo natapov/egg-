@@ -186,7 +186,8 @@ public class MjpegView extends SurfaceView{
             try {
                 canvas = this.getHolder().lockCanvas();
                 if (canvas == null) {
-                    Log.w(TAG, "null canvas, skipping render");
+                    camera_frame.setBackgroundColor(Color.RED);
+                    Log.w(cam_name, "null canvas, skipping render");
                     continue;
                 }
                 canvas.save();
