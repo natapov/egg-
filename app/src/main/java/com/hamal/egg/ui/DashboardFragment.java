@@ -67,6 +67,18 @@ public class DashboardFragment extends Fragment {
             NavController navController = Navigation.findNavController(v);
             navController.navigate(R.id.action_dashboard_to_zoom, bundle);
         });
+        binding.zoomButton2.setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putInt("cameraNum", 2);
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.action_dashboard_to_zoom, bundle);
+        });
+        binding.zoomButton3.setOnClickListener(v -> {
+            Bundle bundle = new Bundle();
+            bundle.putInt("cameraNum", 3);
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.action_dashboard_to_zoom, bundle);
+        });
         return binding.getRoot();
     }
     @Override

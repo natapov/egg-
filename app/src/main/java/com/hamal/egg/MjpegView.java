@@ -296,6 +296,7 @@ public class MjpegView extends SurfaceView{
         camera_frame = frame;
         rotate = rotate_cam;
         is_run = true;
+        assert thread == null;
         thread = new Thread(this::connect);
         thread.start();
     }

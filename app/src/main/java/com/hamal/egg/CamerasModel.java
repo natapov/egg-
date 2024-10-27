@@ -30,7 +30,16 @@ public class CamerasModel extends ViewModel {
         }
     }
 
-
+    public MjpegView getCamera(int n) {
+        switch (n) {
+            case 2:
+                return camera2;
+            case 3:
+                return camera3;
+            default:
+                return camera1;
+        }
+    }
     @Override
     protected void onCleared() {
         super.onCleared();
