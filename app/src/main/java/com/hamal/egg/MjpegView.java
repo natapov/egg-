@@ -10,7 +10,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 //import android.net.TetheringManager;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -30,6 +29,8 @@ public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
     private static final Object tethering_lock = new Object();
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
+    private final int max_width;
+    private final int max_height;
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     Thread thread = null;
     HttpURLConnection connection = null;
@@ -49,7 +50,7 @@ public class MjpegView extends SurfaceView{
     private static final String TAG = "MjpegView";
     private String ip;
     private FrameLayout camera_frame;
-    private boolean rotate;
+    private boolean is_zoom;
 
 
     public MjpegView(Context context, String name, MainActivity model, String url_end, int width, int height) {
@@ -62,6 +63,8 @@ public class MjpegView extends SurfaceView{
         cam_name = name;
         port = url_end;
         ip_provider = model;
+        max_width = width;
+        max_height = height;
         bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
         options.inMutable = true;
         options.inBitmap = bm;
@@ -88,11 +91,29 @@ public class MjpegView extends SurfaceView{
         setRecording(false);
         bm.recycle();
     }
+
+    public int getXSize(){
+        if (is_zoom){
+            return max_width;
+        }
+        else {
+            return SettingsFragment.getXSize(sharedPreferences);
+        }
+    }
+    public int getYSize(){
+        if (is_zoom){
+            return max_height;
+        }
+        else {
+            return SettingsFragment.getYSize(sharedPreferences);
+        }
+    }
+
     public void change_quality_if_needed() throws IOException{
-        int x_size = SettingsFragment.getXSize(sharedPreferences);
+        int x_size = getXSize();
         assert bm != null;
         if (x_size != bm.getWidth()){
-            String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + SettingsFragment.getYSize(sharedPreferences);
+            String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + getYSize();
             URL config_url = new URL(config_string); // todo exception
             HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
             configConnection.setConnectTimeout(30000);
@@ -194,7 +215,7 @@ public class MjpegView extends SurfaceView{
                     continue;
                 }
                 canvas.save();
-                if (rotate) {
+                if (is_zoom) {
                     canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
                 }
                 canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
@@ -298,7 +319,7 @@ public class MjpegView extends SurfaceView{
 
     public void startPlayback(FrameLayout frame, boolean rotate_cam) {
         camera_frame = frame;
-        rotate = rotate_cam;
+        is_zoom = rotate_cam;
         if (thread == null) {
             assert (! is_run);
             is_run = true;

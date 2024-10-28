@@ -44,7 +44,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:background="@drawable/zoom_button_background"
-        android:text="zoom"
+        android:text="back"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/camera_frame"
         app:layout_constraintTop_toBottomOf="@+id/record_button"
