@@ -87,6 +87,7 @@ public class MjpegView extends SurfaceView{
         stopPlayback();
         setRecording(false);
         bm.recycle();
+        bm = null;
     }
 
     public int getXSize(){
@@ -106,29 +107,39 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void change_quality_if_needed() throws IOException{
+    public void change_quality_if_needed() {
         int x_size = getXSize();
         assert bm != null;
-        if (x_size != bm.getWidth()){
-            String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + getYSize();
-            URL config_url = new URL(config_string); // todo exception
-            HttpURLConnection configConnection = (HttpURLConnection) config_url.openConnection();
-            configConnection.setConnectTimeout(30000);
-            configConnection.setRequestMethod("GET");
-            configConnection.setReadTimeout(30000);
-            int responseCode = configConnection.getResponseCode();
-            configConnection.disconnect();
+        HttpURLConnection configConnection = null;
+
+        try {
+            if (x_size != bm.getWidth()) {
+                closeConnectionAndDataInput();
+                String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + getYSize();
+                URL config_url = new URL(config_string); // todo exception
+                configConnection = (HttpURLConnection) config_url.openConnection();
+                configConnection.setConnectTimeout(100);
+                configConnection.setRequestMethod("GET");
+                configConnection.setReadTimeout(100);
+                int responseCode = configConnection.getResponseCode();
+            }
+        } catch (IOException e) {
+            Log.w(cam_name, "Failed when changing quality, continuing.. ",  e);
+        } finally {
+            if (configConnection != null){
+                configConnection.disconnect();
+            }
         }
     }
 
     public void actually_connect_to_egg() throws IOException {
+        assert data_input == null;
+        assert connection == null;
         connection = (HttpURLConnection) stream_url.openConnection();
-        connection.setDoInput(true);
         connection.setConnectTimeout(300);
         connection.setReadTimeout(300);
         connection.connect();
         data_input = new DataInputStream(connection.getInputStream());
-
     }
     private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
         int seqIndex = 0;
@@ -148,6 +159,7 @@ public class MjpegView extends SurfaceView{
         throw new IOException("Bad packet format");
     }
     public byte[] read_frame() throws IOException {
+        assert data_input != null;
         read_until_sequence(headerBuffer, data_input, SOI_MARKER);
         int contentLength = parseContentLength(headerBuffer);
         byte[] frameBuffer = new byte[contentLength];
@@ -175,10 +187,10 @@ public class MjpegView extends SurfaceView{
         Bitmap ovl = null;
         long last_print_time = 0;
         int frame_count = 0;
-        byte[] frame_buffer = null;
+        byte[] frame_buffer;
         while(is_run){
             try {
-                if (sharedPreferences.getBoolean("reconnect_mode", true)){
+                if (data_input == null) { // reconnect every frame mode, we check data_input directly for robustness
                     actually_connect_to_egg();
                 }
                 frame_buffer = read_frame();
@@ -193,18 +205,13 @@ public class MjpegView extends SurfaceView{
                 throw e;
             }
             finally {
-                if (sharedPreferences.getBoolean("reconnect_mode", true)) {
-                    if (data_input != null) try {
-                        data_input.close();
-                        data_input = null;
-                    } catch (IOException e) {
-                    }
+                if (sharedPreferences.getBoolean("reconnect_mode", false)) {
+                    closeConnectionAndDataInput();
                 }
             }
             assert frame_buffer != null;
             assert bm != null;
             bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
-            change_quality_if_needed();
             try {
                 last_used_holder = getHolder();
                 canvas = last_used_holder.lockCanvas();
@@ -258,6 +265,7 @@ public class MjpegView extends SurfaceView{
                     Log.e(cam_name, "exception occurred while recording frame", recording_e);
                 }
             }
+            change_quality_if_needed();
         }
     }
     public boolean toggleRecording(){
@@ -278,6 +286,7 @@ public class MjpegView extends SurfaceView{
     }
     public void connect() {
         while(is_run) {
+            camera_frame.setBackgroundColor(Color.RED);
             startTether(); // check that tethering is on
             try {
                 ip = ip_provider.get_ip();
@@ -288,16 +297,11 @@ public class MjpegView extends SurfaceView{
                     Log.e(cam_name, "Bad url given:" + url_string, e);
                     return;
                 }
-                if (!sharedPreferences.getBoolean("reconnect_mode", true)) {
-                    actually_connect_to_egg();
-                }
                 run_loop();
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 Log.e(cam_name, "thread interrupted, halting", e);
                 camera_frame.setBackgroundColor(Color.RED);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 Log.e(cam_name, "Restarting draw loop: ", e);
                 camera_frame.setBackgroundColor(Color.RED);
                 try {
@@ -305,10 +309,11 @@ public class MjpegView extends SurfaceView{
                 } catch (InterruptedException ex) {
                     Log.e(cam_name, "Interrupted, exiting: ", e);
                 }
-                continue; // try again
+            } finally {
+                resetState();
             }
-            Log.i(cam_name, "thread terminating: " + Thread.currentThread().getName());
         }
+        Log.i(cam_name, "thread terminating: " + Thread.currentThread().getName());
     }
 
     public void startPlayback(FrameLayout frame, boolean rotate_cam) {
@@ -322,25 +327,35 @@ public class MjpegView extends SurfaceView{
         }
     }
 
-    public void stopPlayback()  {
-        is_run = false;
+    public void resetState() {
+        try {
+            last_used_holder.unlockCanvasAndPost(null);
+        }
+        catch (Exception ignored){}
+        closeConnectionAndDataInput();
+        assert connection == null;
+        assert data_input == null;
+    }
+
+    public void closeConnectionAndDataInput() {
         if (data_input != null) try {
             data_input.close();
         } catch (IOException ignored) {}
         finally {
             data_input = null;
         }
+        if (connection != null) {
+            connection.disconnect();
+            connection = null;
+        }
+    }
+    public void stopPlayback()  {
+        is_run = false;
         try {
             thread.join(10);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        } catch (InterruptedException ignored) {}
         thread.interrupt();
         thread = null;
-        try {
-            last_used_holder.unlockCanvasAndPost(null);
-        }
-        catch (Exception ignored){}
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {
