@@ -9,8 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.net.TetheringManager;
-import android.net.wifi.WifiManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -291,7 +289,6 @@ public class MjpegView extends SurfaceView{
         Log.i(cam_name, "Thread started");
         while(is_run) {
             camera_frame.setBackgroundColor(Color.RED);
-            startTether(); // check that tethering is on
             try {
                 ip = ip_provider.get_ip();
                 String url_string = "http://" + ip + port + "/stream.mjpg";
@@ -370,27 +367,6 @@ public class MjpegView extends SurfaceView{
         String substring = s.substring(start, end);
         return Integer.parseInt(substring);
     }
-    private void startTether(){
-//        synchronized(tethering_lock) {
-//            WifiManager wifi = mContext.getSystemService(WifiManager.class);
-//            while (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLING) {}
-//            if (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLED) {
-//                return;
-//            }
-//            TetheringManager.StartTetheringCallback callback = new TetheringManager.StartTetheringCallback() {
-//                @Override
-//                public void onTetheringStarted() {
-//                    // Tethering started successfully
-//                }
-//
-//                @Override
-//                public void onTetheringFailed(int error) {
-//                    //@todo log and try again
-//                }
-//            };
-//            TetheringManager tetheringManager = mContext.getSystemService(TetheringManager.class);
-//            TetheringManager.TetheringRequest request = new TetheringManager.TetheringRequest.Builder(TetheringManager.TETHERING_WIFI).build();
-//            tetheringManager.startTethering(request, Runnable::run, callback);
-//        }
-    }
+
 }
+//192.168.31.220:8008

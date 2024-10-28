@@ -1,5 +1,7 @@
 package com.hamal.egg;
 
+import android.net.TetheringManager;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,27 +25,52 @@ public class MainActivity extends AppCompatActivity {
         thread.start();
     }
 
+    private void startTether(){
+        WifiManager wifi = getSystemService(WifiManager.class);
+        while (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLING) {}
+        if (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLED) {
+            return;
+        }
+        TetheringManager.StartTetheringCallback callback = new TetheringManager.StartTetheringCallback() {
+            @Override
+            public void onTetheringStarted() {
+                // Tethering started successfully
+            }
+
+            @Override
+            public void onTetheringFailed(int error) {
+                //@todo log and try again
+            }
+        };
+        TetheringManager tetheringManager = getSystemService(TetheringManager.class);
+        TetheringManager.TetheringRequest request = new TetheringManager.TetheringRequest.Builder(TetheringManager.TETHERING_WIFI).build();
+        tetheringManager.startTethering(request, Runnable::run, callback);
+    }
     public void listen_for_ip() {
         DatagramSocket socket = null;
-        try {
-            socket = new DatagramSocket(UDP_PORT);
-            byte[] buffer = new byte[1024];
-            while (running) {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                socket.receive(packet);
-                String receivedString = new String(packet.getData(), 0, packet.getLength());
-                synchronized (lock) {
-                    latestReceivedString = receivedString;
-                    lock.notifyAll(); // Notify all waiting threads
-                }
-            }
-        } catch (Exception e) {
-            Log.e("kuku", "error", e);
-        } finally {
+        while (running) {
+            startTether();
             try {
-                socket.close();
-            }catch (Exception e) {
+                socket = new DatagramSocket(UDP_PORT);
+                byte[] buffer = new byte[1024];
+                while (running) {
+                    startTether();
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(packet);
+                    String receivedString = new String(packet.getData(), 0, packet.getLength());
+                    synchronized (lock) {
+                        latestReceivedString = receivedString;
+                        lock.notifyAll(); // Notify all waiting threads
+                    }
+                }
+            } catch (Exception e) {
                 Log.e("kuku", "error", e);
+            } finally {
+                if (!running)try {
+                    socket.close();
+                } catch (Exception e) {
+                    Log.e("kuku", "Couldn't close socket", e);
+                }
             }
         }
     }
