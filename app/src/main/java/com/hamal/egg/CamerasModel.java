@@ -43,15 +43,17 @@ public class CamerasModel extends ViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        // Cleanup if needed
         if (camera1 != null) {
-            camera1.stopPlayback();
+            camera1.cleanup();
+            camera1 = null;
         }
         if (camera2 != null) {
-            camera2.stopPlayback();
+            camera2.cleanup();
+            camera2 = null;
         }
         if (camera3 != null) {
-            camera3.stopPlayback();
+            camera3.cleanup();
+            camera3 = null;
         }
     }
 }

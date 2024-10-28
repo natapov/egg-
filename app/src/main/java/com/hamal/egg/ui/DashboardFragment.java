@@ -95,9 +95,6 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        model.camera1.stopPlayback();
-        model.camera2.stopPlayback();
-        model.camera3.stopPlayback();
         binding.camHolder1.removeView(model.camera1);
         binding.camHolder2.removeView(model.camera2);
         binding.camHolder3.removeView(model.camera3);

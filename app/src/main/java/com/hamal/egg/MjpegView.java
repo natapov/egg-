@@ -77,14 +77,17 @@ public class MjpegView extends SurfaceView{
                     holder.unlockCanvasAndPost(null);
                 }
                 catch (Exception ignored){}
-                //stopPlayback();
+                stopPlayback();
                 setRecording(false);
             }
         });
-
-
     }
 
+    public void cleanup(){
+        stopPlayback();
+        setRecording(false);
+        bm.recycle();
+    }
     public void change_quality_if_needed() throws IOException{
         int x_size = SettingsFragment.getXSize(sharedPreferences);
         assert bm != null;
