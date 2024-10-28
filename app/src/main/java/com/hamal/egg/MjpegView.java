@@ -92,7 +92,7 @@ public class MjpegView extends SurfaceView{
 
     public int getXSize(){
         if (is_zoom){
-            return max_width;
+            return max_height; // height because the frame is rotated
         }
         else {
             return SettingsFragment.getXSize(sharedPreferences);
@@ -100,7 +100,7 @@ public class MjpegView extends SurfaceView{
     }
     public int getYSize(){
         if (is_zoom){
-            return max_height;
+            return max_width; // width because the frame is rotated
         }
         else {
             return SettingsFragment.getYSize(sharedPreferences);
@@ -256,9 +256,10 @@ public class MjpegView extends SurfaceView{
                 }
                 canvas = null;
             }
-            if (is_recording) {
+            if (is_recording && bm.getWidth() == getXSize()) { // make sure quality has updated so that we don't switch frame size mid recording
                 try {
                     assert frame_buffer != null;
+                    assert bm.getHeight() == getYSize();
                     recording_handler.capture_frame(frame_buffer);
                 }
                 catch (Exception recording_e){
@@ -274,10 +275,11 @@ public class MjpegView extends SurfaceView{
     public boolean setRecording(boolean new_state) {
         if (is_recording != new_state) {
             is_recording = new_state;
-            if (new_state)
-                recording_handler.startRecording(cam_name);
-            else
+            if (new_state) {
+                recording_handler.startRecording(cam_name, getXSize(), getYSize());
+            } else {
                 recording_handler.stopRecording();
+            }
 
         }
         if (recording_button != null)

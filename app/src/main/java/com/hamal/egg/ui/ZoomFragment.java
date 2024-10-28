@@ -1,7 +1,6 @@
 package com.hamal.egg.ui;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +13,6 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.hamal.egg.CamerasModel;
-import com.hamal.egg.MainActivity;
 import com.hamal.egg.MjpegView;
 import com.hamal.egg.R;
 import com.hamal.egg.databinding.ZoomViewBinding;
@@ -35,10 +33,16 @@ public class ZoomFragment extends Fragment {
         assert cameraNum != 0;
         camera = model.getCamera(cameraNum);
         assert(camera != null);
+        camera.recording_button = binding.recordButton;
+
         binding.zoomButton.setOnClickListener(v -> {
             NavController navController = Navigation.findNavController(v);
             navController.navigate(R.id.action_back_to_dashboard);
         });
+        binding.recordButton.setOnClickListener(n -> {
+            camera.toggleRecording();
+        });
+
         return root;
     }
     @Override

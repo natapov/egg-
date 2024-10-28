@@ -21,6 +21,7 @@ import android.widget.ListView;
 import com.hamal.egg.databinding.FragmentVideoBinding;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Locale;
 
 public class PlayerFragment extends Fragment {
@@ -61,6 +62,7 @@ public class PlayerFragment extends Fragment {
                 }
             }
         }
+        Collections.sort(fileList);
     }
 
     private void setupListView() {

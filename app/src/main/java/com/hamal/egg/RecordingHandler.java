@@ -22,10 +22,10 @@ public class RecordingHandler {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
     }
     MJPEGGenerator m = null;
-    public void startRecording(String cam_name) {
+    public void startRecording(String cam_name, int x_size, int y_size) {
         try {
             File mjpegFilePath = createSavingFile(cam_name, "avi");
-            m = new MJPEGGenerator(mjpegFilePath, SettingsFragment.getXSize(sharedPreferences), SettingsFragment.getYSize(sharedPreferences), 12.0);
+            m = new MJPEGGenerator(mjpegFilePath, x_size, y_size, 12.0);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
         }
