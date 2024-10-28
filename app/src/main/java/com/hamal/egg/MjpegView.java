@@ -9,7 +9,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-//import android.net.TetheringManager;
+import android.net.TetheringManager;
+import android.net.wifi.WifiManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -287,6 +288,7 @@ public class MjpegView extends SurfaceView{
         return is_recording;
     }
     public void connect() {
+        Log.i(cam_name, "Thread started");
         while(is_run) {
             camera_frame.setBackgroundColor(Color.RED);
             startTether(); // check that tethering is on
@@ -371,7 +373,7 @@ public class MjpegView extends SurfaceView{
     private void startTether(){
 //        synchronized(tethering_lock) {
 //            WifiManager wifi = mContext.getSystemService(WifiManager.class);
-//            while(wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLING) {}
+//            while (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLING) {}
 //            if (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLED) {
 //                return;
 //            }

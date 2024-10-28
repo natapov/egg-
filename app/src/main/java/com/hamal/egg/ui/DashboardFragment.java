@@ -99,12 +99,4 @@ public class DashboardFragment extends Fragment {
         binding.camHolder2.removeView(model.camera2);
         binding.camHolder3.removeView(model.camera3);
     }
-    @Override
-    public void onDestroy() {
-//        binding.camHolder1.removeView(model.camera1);
-//        binding.camHolder2.removeView(model.camera2);
-//        binding.camHolder3.removeView(model.camera3);
-
-        super.onDestroy();
-    }
 }
