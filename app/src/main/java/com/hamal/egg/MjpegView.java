@@ -47,7 +47,6 @@ public class MjpegView extends SurfaceView{
     Paint fpsPaint = null;
     final SharedPreferences sharedPreferences;
     String cam_name;
-    private static final String TAG = "MjpegView";
     private String ip;
     private FrameLayout camera_frame;
     private boolean is_zoom;
@@ -245,7 +244,7 @@ public class MjpegView extends SurfaceView{
                         last_used_holder.unlockCanvasAndPost(canvas);
                     }
                     catch (IllegalStateException e){
-                        Log.w(TAG, "canvas issue", e);
+                        Log.w(cam_name, "canvas issue", e);
                     }
                 }
                 canvas = null;
@@ -256,7 +255,7 @@ public class MjpegView extends SurfaceView{
                     recording_handler.capture_frame(frame_buffer);
                 }
                 catch (Exception recording_e){
-                    Log.e(TAG, "exception occurred while recording frame", recording_e);
+                    Log.e(cam_name, "exception occurred while recording frame", recording_e);
                 }
             }
         }
@@ -286,7 +285,7 @@ public class MjpegView extends SurfaceView{
                 try {
                     stream_url = new URL(url_string);
                 } catch (MalformedURLException e) {
-                    Log.e(TAG, "Bad url given:" + url_string, e);
+                    Log.e(cam_name, "Bad url given:" + url_string, e);
                     return;
                 }
                 if (!sharedPreferences.getBoolean("reconnect_mode", true)) {
@@ -295,20 +294,20 @@ public class MjpegView extends SurfaceView{
                 run_loop();
             }
             catch (InterruptedException e) {
-                Log.e(TAG, "thread interrupted, halting", e);
+                Log.e(cam_name, "thread interrupted, halting", e);
                 camera_frame.setBackgroundColor(Color.RED);
             }
             catch (Exception e){
-                Log.e(TAG, "Restarting draw loop: ", e);
+                Log.e(cam_name, "Restarting draw loop: ", e);
                 camera_frame.setBackgroundColor(Color.RED);
                 try {
                     sleep(100);
                 } catch (InterruptedException ex) {
-                    Log.e(TAG, "Interrupted, exiting: ", e);
+                    Log.e(cam_name, "Interrupted, exiting: ", e);
                 }
                 continue; // try again
             }
-            Log.i(TAG, "thread terminating: " + Thread.currentThread().getName());
+            Log.i(cam_name, "thread terminating: " + Thread.currentThread().getName());
         }
     }
 
