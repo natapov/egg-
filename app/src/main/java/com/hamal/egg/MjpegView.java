@@ -51,6 +51,7 @@ public class MjpegView extends SurfaceView{
     private String ip;
     private FrameLayout camera_frame;
     private boolean is_zoom;
+    private SurfaceHolder last_used_holder;
 
 
     public MjpegView(Context context, String name, MainActivity model, String url_end, int width, int height) {
@@ -69,17 +70,14 @@ public class MjpegView extends SurfaceView{
         options.inMutable = true;
         options.inBitmap = bm;
 
-        this.getHolder().addCallback(new SurfaceHolder.Callback() {
+        getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) { }
             @Override
             public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) { }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                try {
-                    holder.unlockCanvasAndPost(null);
-                }
-                catch (Exception ignored){}
+
                 stopPlayback();
                 setRecording(false);
             }
@@ -199,6 +197,7 @@ public class MjpegView extends SurfaceView{
                 if (sharedPreferences.getBoolean("reconnect_mode", true)) {
                     if (data_input != null) try {
                         data_input.close();
+                        data_input = null;
                     } catch (IOException e) {
                     }
                 }
@@ -208,7 +207,8 @@ public class MjpegView extends SurfaceView{
             bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
             change_quality_if_needed();
             try {
-                canvas = this.getHolder().lockCanvas();
+                last_used_holder = getHolder();
+                canvas = last_used_holder.lockCanvas();
                 if (canvas == null) {
                     camera_frame.setBackgroundColor(Color.RED);
                     Log.w(cam_name, "null canvas, skipping render");
@@ -242,7 +242,7 @@ public class MjpegView extends SurfaceView{
             finally {
                 if (canvas != null) {
                     try {
-                        this.getHolder().unlockCanvasAndPost(canvas);
+                        last_used_holder.unlockCanvasAndPost(canvas);
                     }
                     catch (IllegalStateException e){
                         Log.w(TAG, "canvas issue", e);
@@ -278,7 +278,7 @@ public class MjpegView extends SurfaceView{
         return is_recording;
     }
     public void connect() {
-        for(int i = 0;; i++) {
+        while(is_run) {
             startTether(); // check that tethering is on
             try {
                 ip = ip_provider.get_ip();
@@ -302,18 +302,13 @@ public class MjpegView extends SurfaceView{
                 Log.e(TAG, "Restarting draw loop: ", e);
                 camera_frame.setBackgroundColor(Color.RED);
                 try {
-                    sleep(1);
+                    sleep(100);
                 } catch (InterruptedException ex) {
-                    Log.e(TAG, "Interrupted exiting: ", e);
-
-                    assert(!is_run);
-                    break;
+                    Log.e(TAG, "Interrupted, exiting: ", e);
                 }
                 continue; // try again
             }
-            assert(!is_run);
             Log.i(TAG, "thread terminating: " + Thread.currentThread().getName());
-            break;
         }
     }
 
@@ -330,6 +325,12 @@ public class MjpegView extends SurfaceView{
 
     public void stopPlayback()  {
         is_run = false;
+        if (data_input != null) try {
+            data_input.close();
+        } catch (IOException ignored) {}
+        finally {
+            data_input = null;
+        }
         try {
             thread.join(10);
         } catch (InterruptedException e) {
@@ -337,6 +338,10 @@ public class MjpegView extends SurfaceView{
         }
         thread.interrupt();
         thread = null;
+        try {
+            last_used_holder.unlockCanvasAndPost(null);
+        }
+        catch (Exception ignored){}
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {
