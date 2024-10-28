@@ -10,10 +10,13 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.hamal.egg.CamerasModel;
 import com.hamal.egg.MainActivity;
 import com.hamal.egg.MjpegView;
+import com.hamal.egg.R;
 import com.hamal.egg.databinding.ZoomViewBinding;
 
 
@@ -30,21 +33,24 @@ public class ZoomFragment extends Fragment {
         CamerasModel model = new ViewModelProvider(requireActivity()).get(CamerasModel.class);
         int cameraNum = getArguments().getInt("cameraNum", 0);
         assert cameraNum != 0;
-        camera = model.getCamera(0);
+        camera = model.getCamera(cameraNum);
         assert(camera != null);
-        binding.camHolder.addView(camera);
+        binding.zoomButton.setOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.action_back_to_dashboard);
+        });
         return root;
     }
     @Override
     public void onResume() {
         super.onResume();
-        MainActivity activity = (MainActivity) context;
-        assert activity != null;
+        binding.camHolder.addView(camera);
         camera.startPlayback(binding.cameraFrame, true);
     }
 
     @Override
     public void onPause() {
+        binding.camHolder.removeView(camera);
         super.onPause();
     }
 }

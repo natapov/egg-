@@ -46,5 +46,10 @@
         android:label="@string/title_settings"
         app:launchSingleTop="true"
         app:popUpTo="@id/navigation_settings"
-        app:popUpToInclusive="true" />
+        app:popUpToInclusive="true">
+    <action
+        android:id="@+id/action_back_to_dashboard"
+        app:destination="@id/navigation_dashboard" />
+    </fragment>
+
 </navigation>

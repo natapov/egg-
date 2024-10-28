@@ -296,10 +296,12 @@ public class MjpegView extends SurfaceView{
     public void startPlayback(FrameLayout frame, boolean rotate_cam) {
         camera_frame = frame;
         rotate = rotate_cam;
-        is_run = true;
-        assert thread == null;
-        thread = new Thread(this::connect);
-        thread.start();
+        if (thread == null) {
+            assert (! is_run);
+            is_run = true;
+            thread = new Thread(this::connect);
+            thread.start();
+        }
     }
 
     public void stopPlayback()  {

@@ -28,26 +28,26 @@
             android:layout_height="@dimen/zoom_cam_height" />
     </FrameLayout>
 
-<!--    <Button-->
-<!--        android:id="@+id/record_button_1"-->
-<!--        android:layout_width="48dp"-->
-<!--        android:layout_height="48dp"-->
-<!--        android:background="@drawable/record_button_background"-->
-<!--        android:text="rec"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toEndOf="@+id/camera_frame"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        app:layout_constraintBottom_toTopOf="@+id/zoom_button_1" />-->
+    <Button
+        android:id="@+id/record_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/record_button_background"
+        android:text="rec"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/camera_frame"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/zoom_button" />
 
-<!--    <Button-->
-<!--        android:id="@+id/zoom_button_1"-->
-<!--        android:layout_width="48dp"-->
-<!--        android:layout_height="48dp"-->
-<!--        android:background="@drawable/zoom_button_background"-->
-<!--        android:text="zoom"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toEndOf="@+id/camera_frame"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/record_button_1"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent" />-->
+    <Button
+        android:id="@+id/zoom_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/zoom_button_background"
+        android:text="zoom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/camera_frame"
+        app:layout_constraintTop_toBottomOf="@+id/record_button"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

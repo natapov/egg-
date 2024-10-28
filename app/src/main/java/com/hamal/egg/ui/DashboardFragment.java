@@ -31,9 +31,6 @@ public class DashboardFragment extends Fragment {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         model = new ViewModelProvider(requireActivity()).get(CamerasModel.class);
         model.initializeCameras(context);
-        binding.camHolder1.addView(model.camera1);
-        binding.camHolder2.addView(model.camera2);
-        binding.camHolder3.addView(model.camera3);
 
         // link the cameras to their buttons, they are in charge of maintaining correct button state
         model.camera1.recording_button = binding.recordButton1;
@@ -87,6 +84,9 @@ public class DashboardFragment extends Fragment {
         MainActivity activity = (MainActivity) context;
         assert activity != null;
         Resources res = getResources();
+        binding.camHolder1.addView(model.camera1);
+        binding.camHolder2.addView(model.camera2);
+        binding.camHolder3.addView(model.camera3);
         model.camera1.startPlayback(binding.frame1,false);
         model.camera2.startPlayback(binding.frame2,false);
         model.camera3.startPlayback(binding.frame3,false);
@@ -104,6 +104,10 @@ public class DashboardFragment extends Fragment {
     }
     @Override
     public void onDestroy() {
+//        binding.camHolder1.removeView(model.camera1);
+//        binding.camHolder2.removeView(model.camera2);
+//        binding.camHolder3.removeView(model.camera3);
+
         super.onDestroy();
     }
 }
