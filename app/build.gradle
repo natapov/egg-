@@ -20,6 +20,14 @@ android {
     buildFeatures {
         viewBinding true
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+        }
+    }
 }
 
 dependencies {
