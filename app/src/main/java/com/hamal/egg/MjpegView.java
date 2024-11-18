@@ -42,7 +42,7 @@ public class MjpegView extends SurfaceView{
     DataInputStream data_input = null;
     String port = null;
     public Button recording_button = null;
-    MainActivity ip_provider = null;
+    CamerasModel ip_provider = null;
     Paint fpsPaint = null;
     final SharedPreferences sharedPreferences;
     String cam_name;
@@ -52,7 +52,7 @@ public class MjpegView extends SurfaceView{
     private SurfaceHolder last_used_holder = null;
 
 
-    public MjpegView(Context context, String name, MainActivity model, String url_end, int width, int height) {
+    public MjpegView(Context context, String name, CamerasModel model, String url_end, int width, int height) {
         super(context, null);
         recording_handler = new RecordingHandler(context);
         fpsPaint = new Paint();

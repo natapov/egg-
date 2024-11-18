@@ -1,7 +1,6 @@
 package com.hamal.egg;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,9 +12,6 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.preference.PreferenceManager;
 
-import com.hamal.egg.CamerasModel;
-import com.hamal.egg.MainActivity;
-import com.hamal.egg.R;
 import com.hamal.egg.databinding.CameraViewBinding;
 
 public class DashboardFragment extends Fragment {

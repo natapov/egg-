@@ -5,10 +5,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.PreferenceManager;
-
 public class SettingsFragment extends PreferenceFragmentCompat {
 
     @Override
@@ -16,9 +15,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         Context context = requireContext();
         setPreferencesFromResource(R.xml.preferences, rootKey);
         Preference eggIpPref = findPreference("egg_ip");
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         if (eggIpPref != null) {
-            MainActivity ip_provider = (MainActivity) context;
+            CamerasModel ip_provider = new ViewModelProvider(requireActivity()).get(CamerasModel.class);
             eggIpPref.setSummary(ip_provider.sample_ip());
         }
 
