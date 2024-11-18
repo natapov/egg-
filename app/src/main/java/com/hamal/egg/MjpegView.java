@@ -24,362 +24,432 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
+public class MjpegView extends SurfaceView {
+    private static final String TAG = "MjpegView";
+    private static final int HEADER_MAX_LENGTH = 300;
+    private static final byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
+    private static final long CONNECT_TIMEOUT_MS = 300;
+    private static final long READ_TIMEOUT_MS = 300;
+    private static final long RETRY_DELAY_MS = 100;
 
-public class MjpegView extends SurfaceView{
-    private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
-    private static final Object tethering_lock = new Object();
-    private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
-    private final int max_width;
-    private final int max_height;
+    // Configuration
+    private final int maxWidth;
+    private final int maxHeight;
+    private final String portEndpoint;
+    private final String cameraName;
     private final MainActivity context;
-    public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
-    Thread thread = null;
-    HttpURLConnection connection = null;
-    boolean is_run = false;
-    boolean is_recording;
-    Bitmap bm;
-    URL stream_url;
-    BitmapFactory.Options options = new BitmapFactory.Options();
-    RecordingHandler  recording_handler;
-    DataInputStream data_input = null;
-    String port = null;
-    public Button recording_button = null;
-    Paint fpsPaint = null;
-    final SharedPreferences sharedPreferences;
-    String cam_name;
-    private String ip;
-    private FrameLayout camera_frame;
-    private boolean is_zoom;
-    private SurfaceHolder last_used_holder = null;
-    private CountDownLatch surfaceReadyLatch = new CountDownLatch(1);
+    private final SharedPreferences sharedPreferences;
+    private volatile boolean isZoom;
 
+    // UI Elements
+    private FrameLayout cameraFrame;
+    public Button recordingButton;
+    private final Paint fpsPaint;
 
-    public MjpegView(Context context, String name, String url_end, int width, int height) {
+    // State
+    private volatile boolean isRunning = false;
+    private volatile boolean isRecording = false;
+    private volatile String currentIp;
+    private URL streamUrl;
+
+    // Threading
+    private final Object connectionLock = new Object();
+    private final CountDownLatch surfaceReadyLatch = new CountDownLatch(1);
+    private volatile Thread workerThread;
+
+    // Camera Connection
+    private HttpURLConnection connection;
+    private DataInputStream dataInput;
+
+    // Image Processing
+    private final BitmapFactory.Options bitmapOptions;
+    private Bitmap reusableBitmap;
+    private final RecordingHandler recordingHandler;
+    private final byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
+
+    private static class Frame {
+        final byte[] data;
+        final Bitmap bitmap;
+        final int width;
+        final int height;
+
+        Frame(byte[] data, Bitmap bitmap) {
+            this.data = data;
+            this.bitmap = bitmap;
+            this.width = bitmap.getWidth();
+            this.height = bitmap.getHeight();
+        }
+
+        void recycle() {
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+        }
+    }
+
+    public MjpegView(Context context, String name, String urlEnd, int width, int height) {
         super(context, null);
-        recording_handler = new RecordingHandler(context);
-        fpsPaint = new Paint();
+        this.context = (MainActivity) context;
+        this.cameraName = name;
+        this.portEndpoint = urlEnd;
+        this.maxWidth = width;
+        this.maxHeight = height;
+        this.sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+        // Initialize image processing objects
+        this.recordingHandler = new RecordingHandler(context);
+        this.reusableBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        this.bitmapOptions = new BitmapFactory.Options();
+        bitmapOptions.inMutable = true;
+        bitmapOptions.inBitmap = reusableBitmap;
+
+        // Initialize UI elements
+        this.fpsPaint = new Paint();
         fpsPaint.setTextAlign(Paint.Align.LEFT);
         fpsPaint.setTextSize(12);
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        cam_name = name;
-        port = url_end;
-        max_width = width;
-        max_height = height;
-        bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
-        options.inMutable = true;
-        options.inBitmap = bm;
-        this.context = (MainActivity) context;
 
+        setupSurfaceCallback();
+    }
+
+    private void setupSurfaceCallback() {
         getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
-            public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                surfaceReadyLatch.countDown();
-            }
+            public void surfaceCreated(@NonNull SurfaceHolder holder) { }
 
             @Override
-            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) { }
+            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {}
+
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                surfaceReadyLatch = new CountDownLatch(1);
-                last_used_holder = null;
                 stopPlayback();
                 setRecording(false);
             }
         });
     }
 
-    public int getXSize(){
-        if (is_zoom){
-            return max_height; // height because the frame is rotated
-        }
-        else {
-            return SettingsFragment.getXSize(sharedPreferences);
-        }
-    }
-    public int getYSize(){
-        if (is_zoom){
-            return max_width; // width because the frame is rotated
-        }
-        else {
-            return SettingsFragment.getYSize(sharedPreferences);
-        }
+    public void startPlayback(FrameLayout frame, boolean rotateCam) {
+        stopPlayback(); // Ensure clean state
+
+        cameraFrame = frame;
+        isZoom = rotateCam;
+        isRunning = true;
+
+        workerThread = new Thread(this::streamingLoop, "MjpegView-" + cameraName);
+        workerThread.start();
     }
 
-    public void change_quality_if_needed() {
-        int x_size = getXSize();
-        assert bm != null;
-        HttpURLConnection configConnection = null;
+    public void stopPlayback() {
+        isRunning = false;
+        setRecording(false);
 
-        try {
-            if (x_size != bm.getWidth()) {
-                closeConnectionAndDataInput();
-                Log.i(cam_name, "Connecting to change quality");
-                String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + getYSize();
-                URL config_url = new URL(config_string); // todo exception
-                configConnection = (HttpURLConnection) config_url.openConnection();
-                configConnection.setConnectTimeout(100);
-                configConnection.setRequestMethod("GET");
-                configConnection.setReadTimeout(100);
-                int responseCode = configConnection.getResponseCode();
+        if (workerThread != null) {
+            workerThread.interrupt();
+            try {
+                workerThread.join(100);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
             }
-        } catch (IOException e) {
-            Log.w(cam_name, "Failed when changing quality, continuing.. ",  e);
+            workerThread = null;
+        }
+
+        closeConnection();
+    }
+
+    private void streamingLoop() {
+        Log.i(cameraName, "Starting streaming loop");
+
+        while (isRunning) {
+            try {
+                updateStreamUrl();
+                processFrames();
+            } catch (InterruptedException e) {
+                Log.i(cameraName, "Stream interrupted", e);
+                break;
+            } catch (Exception e) {
+                Log.e(cameraName, "Error in streaming loop", e);
+                setBackgroundColorOnUiThread(Color.RED);
+
+                if (!isRunning) break;
+
+                try {
+                    Thread.sleep(RETRY_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            } finally {
+                closeConnection();
+            }
+        }
+
+        Log.i(cameraName, "Streaming loop terminated");
+    }
+
+    private void processFrames() throws Exception {
+        FpsCounter fpsCounter = new FpsCounter();
+        Bitmap overlayBitmap = null;
+
+        while (isRunning) {
+            Frame frame = captureFrame();
+            if (frame == null) continue;
+
+            try {
+                drawFrame(frame, fpsCounter, overlayBitmap);
+                setBackgroundColorOnUiThread(Color.GRAY);
+
+                // Update FPS overlay if needed
+                if (sharedPreferences.getBoolean("show_fps", true)) {
+                    overlayBitmap = fpsCounter.updateAndGetOverlay(frame);
+                }
+
+                // Handle recording if needed
+                if (isRecording && frame.width == getXSize() && frame.height == getYSize()) {
+                    recordingHandler.capture_frame(frame.data);
+                }
+
+                // Check if quality adjustment is needed
+                if (frame.width != getXSize()) {
+                    adjustQuality();
+                }
+
+            } finally {
+                if (frame.bitmap != reusableBitmap) {
+                    frame.recycle();
+                }
+            }
+        }
+    }
+
+    private Frame captureFrame() throws IOException {
+        synchronized (connectionLock) {
+            if (dataInput == null) {
+                connectToStream();
+            }
+
+            byte[] frameData = readFrameData();
+            if (frameData == null) return null;
+
+            try {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(frameData, 0, frameData.length, bitmapOptions);
+                if (bitmap == null) {
+                    throw new IOException("Failed to decode frame");
+                }
+                return new Frame(frameData, bitmap);
+            } catch (Exception e) {
+                Log.e(cameraName, "Error decoding frame", e);
+                return null;
+            } finally {
+                if (sharedPreferences.getBoolean("reconnect_mode", false)) {
+                    closeConnection();
+                }
+            }
+        }
+    }
+
+    private void drawFrame(Frame frame, FpsCounter fpsCounter, Bitmap overlay) {
+        Canvas canvas = null;
+        try {
+            SurfaceHolder holder = getHolder();
+            if (holder == null) return;
+
+            canvas = holder.lockCanvas();
+            if (canvas != null) {
+                canvas.save();
+                if (isZoom) {
+                    canvas.rotate(90, frame.width / 2f, frame.height / 2f);
+                }
+                canvas.drawBitmap(frame.bitmap, null, canvas.getClipBounds(), null);
+                canvas.restore();
+
+                if (overlay != null) {
+                    canvas.drawBitmap(overlay,
+                            canvas.getWidth() - overlay.getWidth(),
+                            canvas.getHeight() - overlay.getHeight(),
+                            null);
+                }
+                fpsCounter.incrementFrame();
+            }
         } finally {
-            if (configConnection != null){
+            if (canvas != null) {
+                try {
+                    SurfaceHolder holder = getHolder();
+                    if (holder != null) {
+                        holder.unlockCanvasAndPost(canvas);
+                    }
+                } catch (IllegalStateException e) {
+                    Log.w(cameraName, "Failed to unlock canvas", e);
+                }
+            }
+        }
+    }
+
+    private static class FpsCounter {
+        private int frameCount = 0;
+        private long lastUpdateTime = System.currentTimeMillis();
+        private static final long UPDATE_INTERVAL_MS = 1000;
+
+        void incrementFrame() {
+            frameCount++;
+        }
+
+        Bitmap updateAndGetOverlay(Frame frame) {
+            long currentTime = System.currentTimeMillis();
+            long delta = currentTime - lastUpdateTime;
+
+            if (delta >= UPDATE_INTERVAL_MS) {
+                float fps = frameCount / (delta / 1000f);
+                String fpsText = String.format("%.2f fps %dx%d", fps, frame.width, frame.height);
+
+                lastUpdateTime = currentTime;
+                frameCount = 0;
+
+                return createFpsOverlay(fpsText);
+            }
+            return null;
+        }
+
+        private Bitmap createFpsOverlay(String text) {
+            Paint paint = new Paint();
+            paint.setTextSize(12);
+            paint.setTextAlign(Paint.Align.LEFT);
+
+            Rect bounds = new Rect();
+            paint.getTextBounds(text, 0, text.length(), bounds);
+
+            int width = bounds.width() + 2;
+            int height = bounds.height() + 2;
+
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+
+            paint.setColor(Color.DKGRAY);
+            canvas.drawRect(0, 0, width, height, paint);
+
+            paint.setColor(Color.WHITE);
+            canvas.drawText(text, -bounds.left + 1,
+                    (height / 2f) - ((paint.ascent() + paint.descent()) / 2) + 1, paint);
+
+            return bitmap;
+        }
+    }
+
+    private void connectToStream() throws IOException {
+        Log.i(cameraName, "Opening connection");
+        connection = (HttpURLConnection) streamUrl.openConnection();
+        connection.setConnectTimeout((int) CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout((int) READ_TIMEOUT_MS);
+        connection.connect();
+        dataInput = new DataInputStream(connection.getInputStream());
+    }
+
+    private byte[] readFrameData() throws IOException {
+        readUntilSequence(headerBuffer, dataInput, SOI_MARKER);
+        int contentLength = parseContentLength(headerBuffer);
+        byte[] frameBuffer = new byte[contentLength];
+        dataInput.readFully(frameBuffer, 0, contentLength);
+        return frameBuffer;
+    }
+
+    private void readUntilSequence(byte[] buffer, InputStream in, byte[] sequence) throws IOException {
+        int seqIndex = 0;
+        for (int i = 0; i < HEADER_MAX_LENGTH; i++) {
+            int value = in.read();
+            if (value == -1) throw new IOException("End of stream");
+
+            buffer[i] = (byte) value;
+            if (value == sequence[seqIndex]) {
+                seqIndex++;
+                if (seqIndex == sequence.length) return;
+            } else {
+                seqIndex = 0;
+            }
+        }
+        throw new IOException("Header too long");
+    }
+
+    private void adjustQuality() {
+        HttpURLConnection configConnection = null;
+        try {
+            String configUrl = String.format("http://%s%s/config?fps=12&resx=%d&resy=%d",
+                    currentIp, portEndpoint, getXSize(), getYSize());
+
+            configConnection = (HttpURLConnection) new URL(configUrl).openConnection();
+            configConnection.setConnectTimeout(100);
+            configConnection.setRequestMethod("GET");
+            configConnection.setReadTimeout(100);
+            configConnection.getResponseCode();
+        } catch (IOException e) {
+            Log.w(cameraName, "Failed to adjust quality", e);
+        } finally {
+            if (configConnection != null) {
                 configConnection.disconnect();
             }
         }
     }
 
-    public void actually_connect_to_egg() throws IOException {
-        Log.i(cam_name, "Opening connection");
-        assert data_input == null;
-        assert connection == null;
-        connection = (HttpURLConnection) stream_url.openConnection();
-        connection.setConnectTimeout(300);
-        connection.setReadTimeout(300);
-        connection.connect();
-        data_input = new DataInputStream(connection.getInputStream());
+    private void updateStreamUrl() throws MalformedURLException, InterruptedException {
+        currentIp = context.get_ip();
+        String urlString = "http://" + currentIp + portEndpoint + "/stream.mjpg";
+        streamUrl = new URL(urlString);
     }
-    private void read_until_sequence(byte [] buffer, InputStream in, byte[] sequence) throws IOException {
-        int seqIndex = 0;
-        byte c;
-        for (int i = 0; i < HEADER_MAX_LENGTH; i++) {
-            c = (byte) in.read();
-            buffer[i] = c;
-            if (c == sequence[seqIndex]) {
-                seqIndex++;
-                if (seqIndex == sequence.length) {
-                    return;
+
+    private void closeConnection() {
+        synchronized (connectionLock) {
+            if (dataInput != null) {
+                try {
+                    dataInput.close();
+                } catch (IOException e) {
+                    Log.e(cameraName, "Error closing data input", e);
                 }
+                dataInput = null;
+            }
+
+            if (connection != null) {
+                connection.disconnect();
+                connection = null;
+            }
+        }
+    }
+
+    private void setBackgroundColorOnUiThread(final int color) {
+        if (cameraFrame != null) {
+            post(() -> cameraFrame.setBackgroundColor(color));
+        }
+    }
+
+    public boolean toggleRecording() {
+        return setRecording(!isRecording);
+    }
+
+    public boolean setRecording(boolean newState) {
+        if (isRecording != newState) {
+            isRecording = newState;
+            if (newState) {
+                recordingHandler.startRecording(cameraName, getXSize(), getYSize());
             } else {
-                seqIndex = 0;
+                recordingHandler.stopRecording();
             }
         }
-        throw new IOException("Bad packet format");
-    }
-    public byte[] read_frame() throws IOException {
-        assert data_input != null;
-        read_until_sequence(headerBuffer, data_input, SOI_MARKER);
-        int contentLength = parseContentLength(headerBuffer);
-        byte[] frameBuffer = new byte[contentLength];
-        data_input.readFully(frameBuffer,0, contentLength);
-        return frameBuffer;
-    }
-    private Bitmap makeFpsOverlay(Paint p, String text) {
-        Rect b = new Rect();
-        p.getTextBounds(text, 0, text.length(), b);
-        final int bwidth = b.width() + 2;
-        final int bheight = b.height() + 2;
-        Bitmap bm = Bitmap.createBitmap(bwidth, bheight, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(bm);
-        int overlayBackgroundColor = Color.DKGRAY;
-        p.setColor(overlayBackgroundColor);
-        c.drawRect(0, 0, bwidth, bheight, p);
-        int overlayTextColor = Color.WHITE;
-        p.setColor(overlayTextColor);
-        c.drawText(text, -b.left + 1,
-                ((float) bheight / 2) - ((p.ascent() + p.descent()) / 2) + 1, p);
-        return bm;
-    }
-    public void run_loop() throws Exception {
-        Canvas canvas = null;
-        Bitmap ovl = null;
-        long last_print_time = 0;
-        int frame_count = 0;
-        byte[] frame_buffer;
-        while(is_run){
-            Log.d(cam_name, "Start frame loop");
-            try {
-                if (data_input == null) { // reconnect every frame mode, we check data_input directly for robustness
-                    actually_connect_to_egg();
-                    assert data_input != null;
-                }
-                frame_buffer = read_frame();
-                assert frame_buffer != null;
-                assert (frame_buffer.length > 0);
-            }
-            catch (IOException e){
-                camera_frame.setBackgroundColor(Color.RED);
-                if (!is_run){
-                    return;
-                }
-                throw e;
-            }
-            finally {
-                if (sharedPreferences.getBoolean("reconnect_mode", false)) {
-                    closeConnectionAndDataInput();
-                }
-            }
-            assert frame_buffer != null;
-            assert bm != null;
-            bm = BitmapFactory.decodeByteArray(frame_buffer, 0, frame_buffer.length, options);
-            try {
-                last_used_holder = getHolder();
-                canvas = last_used_holder.lockCanvas();
-                canvas.save();
-                if (is_zoom) {
-                    canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
-                }
-                canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
-                canvas.restore();
 
-                if (sharedPreferences.getBoolean("show_fps", true)) {
-                    if (ovl != null) {
-                        canvas.drawBitmap(ovl, canvas.getWidth() - ovl.getWidth(), canvas.getHeight() - ovl.getHeight(),  null);
-                    }
-                    frame_count++;
-
-                    long current_time = System.currentTimeMillis();
-                    long delta = current_time - last_print_time;
-                    if (delta >= 1000) {
-                        float actual_fps = frame_count / (delta / 1000f);
-                        String fps_text = String.format("%.2f", actual_fps) + "fps " + bm.getWidth() + "x" + bm.getHeight();
-                        ovl = makeFpsOverlay(fpsPaint, fps_text);
-                        last_print_time = current_time;
-                        frame_count = 0;
-                    }
-                }
-                camera_frame.setBackgroundColor(Color.GRAY);
-            }
-            finally {
-                if (canvas != null) {
-                    try {
-                        last_used_holder.unlockCanvasAndPost(canvas);
-                    }
-                    catch (IllegalStateException e){
-                        Log.w(cam_name, "canvas issue", e);
-                    }
-                }
-                canvas = null;
-            }
-            if (is_recording && bm.getWidth() == getXSize()) { // make sure quality has updated so that we don't switch frame size mid recording
-                try {
-                    assert frame_buffer != null;
-                    assert bm.getHeight() == getYSize();
-                    recording_handler.capture_frame(frame_buffer);
-                }
-                catch (Exception recording_e){
-                    Log.e(cam_name, "exception occurred while recording frame", recording_e);
-                }
-            }
-            change_quality_if_needed();
+        if (recordingButton != null) {
+            post(() -> recordingButton.setSelected(isRecording));
         }
-    }
-    public boolean toggleRecording(){
-        return setRecording(!is_recording);
-    }
-    public boolean setRecording(boolean new_state) {
-        if (is_recording != new_state) {
-            is_recording = new_state;
-            if (new_state) {
-                recording_handler.startRecording(cam_name, getXSize(), getYSize());
-            } else {
-                recording_handler.stopRecording();
-            }
-
-        }
-        if (recording_button != null)
-            recording_button.setSelected(is_recording);
-        return is_recording;
-    }
-    public synchronized void connect() {
-        Log.d(cam_name, "waiting for surface to be ready");
-        try {
-            surfaceReadyLatch.await();
-        } catch (InterruptedException e) {
-            Log.i(cam_name, "Terminating thread due to interrupt while waiting for surface " + Thread.currentThread().getName());
-            thread = null;
-            return;
-        }
-        Log.i(cam_name, "Starting thread: " + Thread.currentThread().getName());
-        is_run = true;
-        while(is_run) {
-            camera_frame.setBackgroundColor(Color.RED);
-            try {
-                ip = context.get_ip();
-                String url_string = "http://" + ip + port + "/stream.mjpg";
-                try {
-                    stream_url = new URL(url_string);
-                } catch (MalformedURLException e) {
-                    Log.e(cam_name, "Bad url given:" + url_string, e);
-                    return;
-                }
-                run_loop();
-            } catch (InterruptedException e) {
-                Log.e(cam_name, "thread interrupted, halting", e);
-                camera_frame.setBackgroundColor(Color.RED);
-            } catch (Exception e) {
-                Log.e(cam_name, "Restarting draw loop: ", e);
-                camera_frame.setBackgroundColor(Color.RED);
-                try {
-                    sleep(100);
-                } catch (InterruptedException ex) {
-                    Log.e(cam_name, "Interrupted, exiting: ", e);
-                }
-            } finally {
-                resetState();
-            }
-        }
-        Log.i(cam_name, "Terminating thread: " + Thread.currentThread().getName());
-        thread = null; // only the thread itself should clear this value
+        return isRecording;
     }
 
-    public void startPlayback(FrameLayout frame, boolean rotate_cam) {
-        camera_frame = frame;
-        is_zoom = rotate_cam;
-        assert !is_run;
-        thread = new Thread(this::connect);
-        thread.start();
+    private int getXSize() {
+        return isZoom ? maxHeight : SettingsFragment.getXSize(sharedPreferences);
     }
 
-    public void resetState() {
-        if (last_used_holder != null) try {
-            last_used_holder.unlockCanvasAndPost(null);
-        }
-        catch (Exception err){
-            Log.w(cam_name, "Error releasing canvas", err);
-        }
-        closeConnectionAndDataInput();
-        assert connection == null;
-        assert data_input == null;
+    private int getYSize() {
+        return isZoom ? maxWidth : SettingsFragment.getYSize(sharedPreferences);
     }
 
-    public void closeConnectionAndDataInput() {
-        if (data_input != null) try {
-            Log.d(cam_name, "Closing connection");
-            data_input.close();
-        } catch (IOException err) {
-            Log.e(cam_name, "Failed to close data_input", err);
-        }
-        finally {
-            data_input = null;
-        }
-        if (connection != null) {
-            connection.disconnect();
-        }
-        connection = null;
-    }
-    public void stopPlayback() {
-        last_used_holder = null;
-        setRecording(false);
-        is_run = false;
-        if (thread != null) {
-            thread.interrupt();
-            try {
-                thread.join(10);
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
-    private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {
-        String s = new String(headerBytes);
+    private int parseContentLength(byte[] headerBytes) {
+        String header = new String(headerBytes);
         String CONTENT_LENGTH = "Content-Length: ";
-        int start = s.indexOf(CONTENT_LENGTH) + CONTENT_LENGTH.length();
-        int end = s.indexOf('\r', start);
-        String substring = s.substring(start, end);
-        return Integer.parseInt(substring);
+        int start = header.indexOf(CONTENT_LENGTH) + CONTENT_LENGTH.length();
+        int end = header.indexOf('\r', start);
+        return Integer.parseInt(header.substring(start, end));
     }
 }
-//192.168.31.220:8008

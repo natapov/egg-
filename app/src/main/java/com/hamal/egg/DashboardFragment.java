@@ -28,9 +28,9 @@ public class DashboardFragment extends Fragment {
         context = (MainActivity) requireContext();
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         // link the cameras to their buttons, they are in charge of maintaining correct button state
-        context.camera1.recording_button = binding.recordButton1;
-        context.camera2.recording_button = binding.recordButton2;
-        context.camera3.recording_button = binding.recordButton3;
+        context.camera1.recordingButton = binding.recordButton1;
+        context.camera2.recordingButton = binding.recordButton2;
+        context.camera3.recordingButton = binding.recordButton3;
 
         binding.recordButton1.setOnClickListener(n -> {
             boolean is_recording = context.camera1.toggleRecording();

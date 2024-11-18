@@ -27,7 +27,7 @@ public class ZoomFragment extends Fragment {
         assert cameraNum != 0;
         camera = context.getCamera(cameraNum);
         assert(camera != null);
-        camera.recording_button = binding.recordButton;
+        camera.recordingButton = binding.recordButton;
 
         binding.zoomButton.setOnClickListener(v -> {
             NavController navController = Navigation.findNavController(v);
