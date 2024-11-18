@@ -64,12 +64,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             } catch (Exception e) {
-                Log.e("kuku", "error", e);
+                Log.e(TAG, "in listen_for_ip", e);
             } finally {
                 if (!running)try {
                     socket.close();
                 } catch (Exception e) {
-                    Log.e("kuku", "Couldn't close socket", e);
+                    Log.e(TAG, "Couldn't close socket", e);
                 }
             }
         }

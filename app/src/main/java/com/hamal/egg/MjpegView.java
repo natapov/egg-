@@ -49,7 +49,7 @@ public class MjpegView extends SurfaceView{
     private String ip;
     private FrameLayout camera_frame;
     private boolean is_zoom;
-    private SurfaceHolder last_used_holder;
+    private SurfaceHolder last_used_holder = null;
 
 
     public MjpegView(Context context, String name, MainActivity model, String url_end, int width, int height) {
@@ -75,7 +75,7 @@ public class MjpegView extends SurfaceView{
             public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) { }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-
+                last_used_holder = null;
                 stopPlayback();
                 setRecording(false);
             }
@@ -190,9 +190,11 @@ public class MjpegView extends SurfaceView{
         int frame_count = 0;
         byte[] frame_buffer;
         while(is_run){
+            Log.i(cam_name, "Start frame loop");
             try {
                 if (data_input == null) { // reconnect every frame mode, we check data_input directly for robustness
                     actually_connect_to_egg();
+                    assert data_input != null;
                 }
                 frame_buffer = read_frame();
                 assert frame_buffer != null;
@@ -288,7 +290,7 @@ public class MjpegView extends SurfaceView{
         return is_recording;
     }
     public void connect() {
-        Log.i(cam_name, "Thread started");
+        Log.i(cam_name, "Starting thread: " + Thread.currentThread().getName());
         while(is_run) {
             camera_frame.setBackgroundColor(Color.RED);
             try {
@@ -316,7 +318,7 @@ public class MjpegView extends SurfaceView{
                 resetState();
             }
         }
-        Log.i(cam_name, "thread terminating: " + Thread.currentThread().getName());
+        Log.i(cam_name, "Terminating thread: " + Thread.currentThread().getName());
     }
 
     public void startPlayback(FrameLayout frame, boolean rotate_cam) {
@@ -331,31 +333,31 @@ public class MjpegView extends SurfaceView{
     }
 
     public void resetState() {
-        try {
+        if (last_used_holder != null) try {
             last_used_holder.unlockCanvasAndPost(null);
         }
-        catch (Exception ignored){}
+        catch (Exception err){
+            Log.w(cam_name, "Error releasing canvas", err);
+        }
         closeConnectionAndDataInput();
         assert connection == null;
         assert data_input == null;
     }
 
     public void closeConnectionAndDataInput() {
-        Log.i(cam_name, "Closing connection");
         if (data_input != null) try {
+            Log.i(cam_name, "Closing connection");
             data_input.close();
+            connection.disconnect();
         } catch (IOException err) {
             Log.e(cam_name, "Failed to close connection", err);
         }
         finally {
             data_input = null;
-        }
-        if (connection != null) {
-            connection.disconnect();
             connection = null;
         }
     }
-    public void stopPlayback()  {
+    public void stopPlayback() {
         is_run = false;
         try {
             thread.join(10);
@@ -372,6 +374,5 @@ public class MjpegView extends SurfaceView{
         String substring = s.substring(start, end);
         return Integer.parseInt(substring);
     }
-
 }
 //192.168.31.220:8008
