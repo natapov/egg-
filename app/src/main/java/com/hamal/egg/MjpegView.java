@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.CountDownLatch;
 
 public class MjpegView extends SurfaceView{
     private final static int HEADER_MAX_LENGTH = 300; // timestamp limited to 17 chars
@@ -30,6 +31,7 @@ public class MjpegView extends SurfaceView{
     private final static byte[] SOI_MARKER = {'\r', '\n', '\r', '\n'};
     private final int max_width;
     private final int max_height;
+    private final MainActivity context;
     public byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
     Thread thread = null;
     HttpURLConnection connection = null;
@@ -42,7 +44,6 @@ public class MjpegView extends SurfaceView{
     DataInputStream data_input = null;
     String port = null;
     public Button recording_button = null;
-    CamerasModel ip_provider = null;
     Paint fpsPaint = null;
     final SharedPreferences sharedPreferences;
     String cam_name;
@@ -50,9 +51,10 @@ public class MjpegView extends SurfaceView{
     private FrameLayout camera_frame;
     private boolean is_zoom;
     private SurfaceHolder last_used_holder = null;
+    private CountDownLatch surfaceReadyLatch = new CountDownLatch(1);
 
 
-    public MjpegView(Context context, String name, CamerasModel model, String url_end, int width, int height) {
+    public MjpegView(Context context, String name, String url_end, int width, int height) {
         super(context, null);
         recording_handler = new RecordingHandler(context);
         fpsPaint = new Paint();
@@ -61,33 +63,29 @@ public class MjpegView extends SurfaceView{
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         cam_name = name;
         port = url_end;
-        ip_provider = model;
         max_width = width;
         max_height = height;
         bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888); // max size bm for reuse
         options.inMutable = true;
         options.inBitmap = bm;
+        this.context = (MainActivity) context;
 
         getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
-            public void surfaceCreated(@NonNull SurfaceHolder holder) { }
+            public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                surfaceReadyLatch.countDown();
+            }
+
             @Override
             public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) { }
             @Override
             public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                surfaceReadyLatch = new CountDownLatch(1);
                 last_used_holder = null;
                 stopPlayback();
                 setRecording(false);
             }
         });
-    }
-
-    public void cleanup(){
-        last_used_holder = null;
-        stopPlayback();
-        setRecording(false);
-        bm.recycle();
-        bm = null;
     }
 
     public int getXSize(){
@@ -191,7 +189,7 @@ public class MjpegView extends SurfaceView{
         int frame_count = 0;
         byte[] frame_buffer;
         while(is_run){
-            Log.i(cam_name, "Start frame loop");
+            Log.d(cam_name, "Start frame loop");
             try {
                 if (data_input == null) { // reconnect every frame mode, we check data_input directly for robustness
                     actually_connect_to_egg();
@@ -219,11 +217,6 @@ public class MjpegView extends SurfaceView{
             try {
                 last_used_holder = getHolder();
                 canvas = last_used_holder.lockCanvas();
-                if (canvas == null) {
-                    camera_frame.setBackgroundColor(Color.RED);
-                    Log.w(cam_name, "null canvas, skipping render");
-                    continue;
-                }
                 canvas.save();
                 if (is_zoom) {
                     canvas.rotate(90, bm.getWidth() / 2f, bm.getHeight() / 2f);
@@ -291,12 +284,20 @@ public class MjpegView extends SurfaceView{
         return is_recording;
     }
     public synchronized void connect() {
+        Log.d(cam_name, "waiting for surface to be ready");
+        try {
+            surfaceReadyLatch.await();
+        } catch (InterruptedException e) {
+            Log.i(cam_name, "Terminating thread due to interrupt while waiting for surface " + Thread.currentThread().getName());
+            thread = null;
+            return;
+        }
         Log.i(cam_name, "Starting thread: " + Thread.currentThread().getName());
         is_run = true;
         while(is_run) {
             camera_frame.setBackgroundColor(Color.RED);
             try {
-                ip = ip_provider.get_ip();
+                ip = context.get_ip();
                 String url_string = "http://" + ip + port + "/stream.mjpg";
                 try {
                     stream_url = new URL(url_string);
@@ -360,11 +361,16 @@ public class MjpegView extends SurfaceView{
         connection = null;
     }
     public void stopPlayback() {
+        last_used_holder = null;
+        setRecording(false);
         is_run = false;
-        try {
-            thread.join(10);
-        } catch (InterruptedException ignored) {}
-        thread.interrupt();
+        if (thread != null) {
+            thread.interrupt();
+            try {
+                thread.join(10);
+            } catch (InterruptedException ignored) {
+            }
+        }
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {

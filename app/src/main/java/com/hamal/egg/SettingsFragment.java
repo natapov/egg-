@@ -5,19 +5,17 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 public class SettingsFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        Context context = requireContext();
+        MainActivity context = (MainActivity) requireContext();
         setPreferencesFromResource(R.xml.preferences, rootKey);
         Preference eggIpPref = findPreference("egg_ip");
         if (eggIpPref != null) {
-            CamerasModel ip_provider = new ViewModelProvider(requireActivity()).get(CamerasModel.class);
-            eggIpPref.setSummary(ip_provider.sample_ip());
+            eggIpPref.setSummary(context.sample_ip());
         }
 
         Preference recordingFolderPref = findPreference("recording_folder");
