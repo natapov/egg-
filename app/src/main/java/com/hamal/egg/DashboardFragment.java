@@ -83,7 +83,6 @@ public class DashboardFragment extends Fragment {
         super.onResume();
         MainActivity activity = (MainActivity) context;
         assert activity != null;
-        Resources res = getResources();
         binding.camHolder1.addView(model.camera1);
         binding.camHolder2.addView(model.camera2);
         binding.camHolder3.addView(model.camera3);

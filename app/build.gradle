@@ -24,6 +24,9 @@ android {
         baseline = file("lint-baseline.xml")
     }
     buildTypes {
+        debug {
+            debuggable true
+        }
         release {
             signingConfig signingConfigs.debug
         }

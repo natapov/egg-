@@ -83,6 +83,7 @@ public class MjpegView extends SurfaceView{
     }
 
     public void cleanup(){
+        last_used_holder = null;
         stopPlayback();
         setRecording(false);
         bm.recycle();
@@ -289,8 +290,9 @@ public class MjpegView extends SurfaceView{
             recording_button.setSelected(is_recording);
         return is_recording;
     }
-    public void connect() {
+    public synchronized void connect() {
         Log.i(cam_name, "Starting thread: " + Thread.currentThread().getName());
+        is_run = true;
         while(is_run) {
             camera_frame.setBackgroundColor(Color.RED);
             try {
@@ -319,17 +321,15 @@ public class MjpegView extends SurfaceView{
             }
         }
         Log.i(cam_name, "Terminating thread: " + Thread.currentThread().getName());
+        thread = null; // only the thread itself should clear this value
     }
 
     public void startPlayback(FrameLayout frame, boolean rotate_cam) {
         camera_frame = frame;
         is_zoom = rotate_cam;
-        if (thread == null) {
-            assert (! is_run);
-            is_run = true;
-            thread = new Thread(this::connect);
-            thread.start();
-        }
+        assert !is_run;
+        thread = new Thread(this::connect);
+        thread.start();
     }
 
     public void resetState() {
@@ -346,16 +346,18 @@ public class MjpegView extends SurfaceView{
 
     public void closeConnectionAndDataInput() {
         if (data_input != null) try {
-            Log.i(cam_name, "Closing connection");
+            Log.d(cam_name, "Closing connection");
             data_input.close();
-            connection.disconnect();
         } catch (IOException err) {
-            Log.e(cam_name, "Failed to close connection", err);
+            Log.e(cam_name, "Failed to close data_input", err);
         }
         finally {
             data_input = null;
-            connection = null;
         }
+        if (connection != null) {
+            connection.disconnect();
+        }
+        connection = null;
     }
     public void stopPlayback() {
         is_run = false;
@@ -363,7 +365,6 @@ public class MjpegView extends SurfaceView{
             thread.join(10);
         } catch (InterruptedException ignored) {}
         thread.interrupt();
-        thread = null;
     }
 
     private int parseContentLength(byte[] headerBytes) throws IllegalArgumentException {
