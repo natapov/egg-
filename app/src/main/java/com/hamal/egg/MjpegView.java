@@ -114,6 +114,7 @@ public class MjpegView extends SurfaceView{
         try {
             if (x_size != bm.getWidth()) {
                 closeConnectionAndDataInput();
+                Log.i(cam_name, "Connecting to change quality");
                 String config_string = "http://" + ip + port + "/config?" + "fps=" + "12" + "&resx=" + x_size + "&resy=" + getYSize();
                 URL config_url = new URL(config_string); // todo exception
                 configConnection = (HttpURLConnection) config_url.openConnection();
@@ -132,6 +133,7 @@ public class MjpegView extends SurfaceView{
     }
 
     public void actually_connect_to_egg() throws IOException {
+        Log.i(cam_name, "Opening connection");
         assert data_input == null;
         assert connection == null;
         connection = (HttpURLConnection) stream_url.openConnection();
@@ -339,9 +341,12 @@ public class MjpegView extends SurfaceView{
     }
 
     public void closeConnectionAndDataInput() {
+        Log.i(cam_name, "Closing connection");
         if (data_input != null) try {
             data_input.close();
-        } catch (IOException ignored) {}
+        } catch (IOException err) {
+            Log.e(cam_name, "Failed to close connection", err);
+        }
         finally {
             data_input = null;
         }
