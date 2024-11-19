@@ -76,26 +76,22 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        Log.e("STATECHANGE", "onStart");
         binding.camHolder1.addView(context.camera1);
         binding.camHolder2.addView(context.camera2);
         binding.camHolder3.addView(context.camera3);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         context.camera1.startPlayback(binding.frame1,false);
         context.camera2.startPlayback(binding.frame2,false);
         context.camera3.startPlayback(binding.frame3,false);
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        Log.e("STATECHANGE", "onResume");
-
-    }
-
-    @Override
     public void onPause() {
         super.onPause();
-        Log.e("STATECHANGE", "onPause");
         context.camera1.stopPlayback();
         context.camera2.stopPlayback();
         context.camera3.stopPlayback();
@@ -103,18 +99,8 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        Log.e("STATECHANGE", "onStop");
         binding.camHolder1.removeView(context.camera1);
         binding.camHolder2.removeView(context.camera2);
         binding.camHolder3.removeView(context.camera3);
     }
-
-
-    @Override
-    public void onDestroy() {
-        Log.e("STATECHANGE", "onDestroy");
-        super.onDestroy();
-    }
-
-
 }
