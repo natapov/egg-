@@ -66,26 +66,10 @@ public class MjpegView extends SurfaceView {
     private Bitmap reusableBitmap;
     private final RecordingHandler recordingHandler;
     private final byte[] headerBuffer = new byte[HEADER_MAX_LENGTH];
+    // FPS counting
+    private long lastFpsUpdate = 0;
+    private int framesSinceUpdate;
 
-    private static class Frame {
-        final byte[] data;
-        final Bitmap bitmap;
-        final int width;
-        final int height;
-
-        Frame(byte[] data, Bitmap bitmap) {
-            this.data = data;
-            this.bitmap = bitmap;
-            this.width = bitmap.getWidth();
-            this.height = bitmap.getHeight();
-        }
-
-        void recycle() {
-            if (bitmap != null && !bitmap.isRecycled()) {
-                bitmap.recycle();
-            }
-        }
-    }
 
     public MjpegView(Context context, String name, String urlEnd, int width, int height) {
         super(context, null);
@@ -185,42 +169,84 @@ public class MjpegView extends SurfaceView {
         Log.i(cameraName, "Streaming loop terminated");
     }
 
-    private void processFrames() throws Exception {
-        FpsCounter fpsCounter = new FpsCounter();
-        Bitmap overlayBitmap = null;
+    private Bitmap createFpsOverlay(Bitmap oldOverlay, int width, int height ) {
+        long currentTime = System.currentTimeMillis();
+        long timeDelta = currentTime - lastFpsUpdate;
+        if (timeDelta >= 1000) {
+            float fps = framesSinceUpdate / (timeDelta / 1000f);
+            String fpsText = String.format("%.2f fps %dx%d", fps, width, height);
+            // Create new overlay bitmap without holding canvas lock
+            Bitmap newOverlay = drawFpsOverlay(fpsText);
 
+            // Safely swap overlay bitmaps
+            if (oldOverlay != null) {
+                oldOverlay.recycle();
+            }
+            lastFpsUpdate = currentTime;
+            framesSinceUpdate = 0;
+            return newOverlay;
+        }
+        else {
+            framesSinceUpdate++;
+            return oldOverlay;
+        }
+    }
+    private void processFrames() throws Exception {
+        Bitmap overlayBitmap = null;
         while (isRunning) {
-            Frame frame = captureFrame();
-            if (frame == null) continue;
+            FrameData frameData = captureFrame();
+            if (frameData == null) continue;
+            Bitmap bm = frameData.bitmap;
 
             try {
-                drawFrame(frame, fpsCounter, overlayBitmap);
+                if (sharedPreferences.getBoolean("show_fps", true)) {
+                    overlayBitmap = createFpsOverlay(overlayBitmap, bm.getWidth(), bm.getHeight());
+                }
+                drawFrame(bm, overlayBitmap);
                 setBackgroundColorOnUiThread(Color.GRAY);
 
-                // Update FPS overlay if needed
-                if (sharedPreferences.getBoolean("show_fps", true)) {
-                    overlayBitmap = fpsCounter.updateAndGetOverlay(frame);
-                }
-
                 // Handle recording if needed
-                if (isRecording && frame.width == getXSize() && frame.height == getYSize()) {
-                    recordingHandler.capture_frame(frame.data);
+                if (isRecording && bm.getWidth() == getXSize()) {
+                    recordingHandler.capture_frame(frameData.data);
                 }
 
                 // Check if quality adjustment is needed
-                if (frame.width != getXSize()) {
+                if (bm.getWidth() != getXSize()) {
                     adjustQuality();
                 }
 
             } finally {
-                if (frame.bitmap != reusableBitmap) {
-                    frame.recycle();
+                if (bm != reusableBitmap) {
+                    bm.recycle();
                 }
             }
         }
     }
 
-    private Frame captureFrame() throws IOException {
+    private Bitmap drawFpsOverlay(String text) {
+        Paint paint = new Paint();
+        paint.setTextSize(12);
+        paint.setTextAlign(Paint.Align.LEFT);
+
+        Rect bounds = new Rect();
+        paint.getTextBounds(text, 0, text.length(), bounds);
+
+        int width = bounds.width() + 2;
+        int height = bounds.height() + 2;
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        paint.setColor(Color.DKGRAY);
+        canvas.drawRect(0, 0, width, height, paint);
+
+        paint.setColor(Color.WHITE);
+        canvas.drawText(text, -bounds.left + 1,
+                (height / 2f) - ((paint.ascent() + paint.descent()) / 2) + 1, paint);
+
+        return bitmap;
+    }
+    private FrameData captureFrame() throws IOException {
         synchronized (connectionLock) {
             if (dataInput == null) {
                 connectToStream();
@@ -234,7 +260,7 @@ public class MjpegView extends SurfaceView {
                 if (bitmap == null) {
                     throw new IOException("Failed to decode frame");
                 }
-                return new Frame(frameData, bitmap);
+                return new FrameData(frameData, bitmap);
             } catch (Exception e) {
                 Log.e(cameraName, "Error decoding frame", e);
                 return null;
@@ -246,7 +272,16 @@ public class MjpegView extends SurfaceView {
         }
     }
 
-    private void drawFrame(Frame frame, FpsCounter fpsCounter, Bitmap overlay) {
+    private static class FrameData {
+        final byte[] data;
+        final Bitmap bitmap;
+
+        FrameData(byte[] data, Bitmap bitmap) {
+            this.data = data;
+            this.bitmap = bitmap;
+        }
+    }
+    private void drawFrame(Bitmap bm, Bitmap overlay) {
         Canvas canvas = null;
         try {
             SurfaceHolder holder = getHolder();
@@ -256,9 +291,9 @@ public class MjpegView extends SurfaceView {
             if (canvas != null) {
                 canvas.save();
                 if (isZoom) {
-                    canvas.rotate(90, frame.width / 2f, frame.height / 2f);
+                    canvas.rotate(90, bm.getWidth() / 2f, bm.getWidth()  / 2f);
                 }
-                canvas.drawBitmap(frame.bitmap, null, canvas.getClipBounds(), null);
+                canvas.drawBitmap(bm, null, canvas.getClipBounds(), null);
                 canvas.restore();
 
                 if (overlay != null) {
@@ -267,7 +302,6 @@ public class MjpegView extends SurfaceView {
                             canvas.getHeight() - overlay.getHeight(),
                             null);
                 }
-                fpsCounter.incrementFrame();
             }
         } finally {
             if (canvas != null) {
@@ -283,55 +317,6 @@ public class MjpegView extends SurfaceView {
         }
     }
 
-    private static class FpsCounter {
-        private int frameCount = 0;
-        private long lastUpdateTime = System.currentTimeMillis();
-        private static final long UPDATE_INTERVAL_MS = 1000;
-
-        void incrementFrame() {
-            frameCount++;
-        }
-
-        Bitmap updateAndGetOverlay(Frame frame) {
-            long currentTime = System.currentTimeMillis();
-            long delta = currentTime - lastUpdateTime;
-
-            if (delta >= UPDATE_INTERVAL_MS) {
-                float fps = frameCount / (delta / 1000f);
-                String fpsText = String.format("%.2f fps %dx%d", fps, frame.width, frame.height);
-
-                lastUpdateTime = currentTime;
-                frameCount = 0;
-
-                return createFpsOverlay(fpsText);
-            }
-            return null;
-        }
-
-        private Bitmap createFpsOverlay(String text) {
-            Paint paint = new Paint();
-            paint.setTextSize(12);
-            paint.setTextAlign(Paint.Align.LEFT);
-
-            Rect bounds = new Rect();
-            paint.getTextBounds(text, 0, text.length(), bounds);
-
-            int width = bounds.width() + 2;
-            int height = bounds.height() + 2;
-
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-
-            paint.setColor(Color.DKGRAY);
-            canvas.drawRect(0, 0, width, height, paint);
-
-            paint.setColor(Color.WHITE);
-            canvas.drawText(text, -bounds.left + 1,
-                    (height / 2f) - ((paint.ascent() + paint.descent()) / 2) + 1, paint);
-
-            return bitmap;
-        }
-    }
 
     private void connectToStream() throws IOException {
         Log.i(cameraName, "Opening connection");
