@@ -8,6 +8,9 @@
 <!--    <dimen name="zoom_cam_height">1366px</dimen>-->
     <dimen name="zoom_cam_width">540px</dimen>
     <dimen name="zoom_cam_height">960px</dimen>
+    <dimen name="mini_cam_width">180px</dimen>
+    <dimen name="mini_cam_height">320px</dimen>
+
     <dimen name="cam_border_width">4px</dimen>
     <dimen name="button_size">48dp</dimen>
 

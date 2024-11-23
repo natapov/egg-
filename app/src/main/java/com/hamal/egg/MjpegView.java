@@ -9,6 +9,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.net.TetheringManager;
+import android.net.wifi.WifiManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -141,8 +143,8 @@ public class MjpegView extends SurfaceView {
 
     private void streamingLoop() {
         Log.i(cameraName, "Starting streaming loop");
-
         while (isRunning) {
+            startTether(); // always make sure tethering is turned on
             try {
                 updateStreamUrl();
                 processFrames();
@@ -436,5 +438,15 @@ public class MjpegView extends SurfaceView {
         int start = header.indexOf(CONTENT_LENGTH) + CONTENT_LENGTH.length();
         int end = header.indexOf('\r', start);
         return Integer.parseInt(header.substring(start, end));
+    }
+
+    private synchronized void startTether(){
+        int wifi_state = context.getSystemService(WifiManager.class).getWifiApState();
+        if (wifi_state == WifiManager.WIFI_AP_STATE_ENABLED || wifi_state == WifiManager.WIFI_AP_STATE_ENABLING) {
+            return;
+        }
+        TetheringManager.StartTetheringCallback callback = new TetheringManager.StartTetheringCallback() {};
+        TetheringManager.TetheringRequest request = new TetheringManager.TetheringRequest.Builder(TetheringManager.TETHERING_WIFI).build();
+        context.getSystemService(TetheringManager.class).startTethering(request, Runnable::run, callback);
     }
 }

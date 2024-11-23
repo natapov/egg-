@@ -1,9 +1,5 @@
 package com.hamal.egg;
-
-import android.content.Context;
 import android.content.res.Resources;
-import android.net.TetheringManager;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -30,14 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private final CountDownLatch initLatch = new CountDownLatch(1);
 
     private boolean running = true;
-    WifiManager wifi;
-    TetheringManager tetheringManager;
-    // Create cameras if they don't exist
-
     public void initializeCameras() {
         Resources res = getResources();
-        wifi = getSystemService(WifiManager.class);
-        tetheringManager = getSystemService(TetheringManager.class);
 
         if (camera1 == null) {
             camera1 = new MjpegView(this, "cam_1", ":8008",
@@ -60,34 +50,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    private void startTether(){
-        if (wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLED || wifi.getWifiApState() == WifiManager.WIFI_AP_STATE_ENABLING) {
-            return;
-        }
-        TetheringManager.StartTetheringCallback callback = new TetheringManager.StartTetheringCallback() {
-            @Override
-            public void onTetheringStarted() {
-                // Tethering started successfully
-            }
-
-            @Override
-            public void onTetheringFailed(int error) {
-                //@todo log and try again
-            }
-        };
-        TetheringManager.TetheringRequest request = new TetheringManager.TetheringRequest.Builder(TetheringManager.TETHERING_WIFI).build();
-        tetheringManager.startTethering(request, Runnable::run, callback);
-    }
     public void listen_for_ip() {
         DatagramSocket socket = null;
         while (running) {
-            startTether();
             try {
                 socket = new DatagramSocket(UDP_PORT);
                 byte[] buffer = new byte[1024];
                 while (running) {
-                    startTether();
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     socket.receive(packet);
                     String receivedString = new String(packet.getData(), 0, packet.getLength());
