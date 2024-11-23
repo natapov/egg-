@@ -442,7 +442,7 @@ public class MjpegView extends SurfaceView {
 
     private synchronized void startTether(){
         int wifi_state = context.getSystemService(WifiManager.class).getWifiApState();
-        if (wifi_state == WifiManager.WIFI_AP_STATE_ENABLED || wifi_state == WifiManager.WIFI_AP_STATE_ENABLING) {
+        if (wifi_state != WifiManager.WIFI_AP_STATE_DISABLED) {
             return;
         }
         TetheringManager.StartTetheringCallback callback = new TetheringManager.StartTetheringCallback() {};
