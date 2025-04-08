@@ -10,20 +10,30 @@
         android:layout_height="0dp"
         android:background="@android:color/black"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/box_22">
+        app:layout_constraintBottom_toTopOf="@+id/separator_line">
 
         <android.widget.ListView
             android:id="@+id/list_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:scrollbars="vertical"
+            android:fadeScrollbars="false"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <View
+        android:id="@+id/separator_line"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#808080"
+        app:layout_constraintTop_toBottomOf="@+id/box_11"
+        app:layout_constraintBottom_toTopOf="@+id/box_22"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/box_22"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="@android:color/black"
-        app:layout_constraintTop_toBottomOf="@+id/box_11"
+        app:layout_constraintTop_toBottomOf="@+id/separator_line"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">

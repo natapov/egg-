@@ -5,7 +5,7 @@
             android:key="reconnect_mode"
             android:title="Connection mode"
             android:summary="Reconnects to egg every frame when on"
-            android:defaultValue="false" />
+            android:defaultValue="true" />
 
         <SwitchPreference
             android:key="show_fps"
