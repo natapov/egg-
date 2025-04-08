@@ -25,10 +25,17 @@
             android:entries="@array/quality_options"
             android:entryValues="@array/quality_options"
             android:defaultValue="Low" />
+            
+        <Preference
+            android:key="restart_app"
+            android:title="Restart app" />
+
+        <Preference
+            android:key="shut_down_app"
+            android:title="Exit to Android" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="info">
-
+    <PreferenceCategory android:title="Info">
 
         <Preference
             android:key="egg_ip"

@@ -1,14 +1,13 @@
 package com.hamal.egg;
+
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.NavigationUI;
 import com.hamal.egg.databinding.ActivityMainBinding;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.CountDownLatch;

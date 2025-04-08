@@ -1,5 +1,4 @@
 package com.hamal.egg;
-import static java.lang.Thread.sleep;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -16,7 +15,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
 import android.widget.FrameLayout;
-
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 import java.io.DataInputStream;
@@ -26,6 +24,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
+
 public class MjpegView extends SurfaceView {
     private static final String TAG = "MjpegView";
     private static final int HEADER_MAX_LENGTH = 300;

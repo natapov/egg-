@@ -1,7 +1,6 @@
 package com.hamal.egg;
 
 import android.content.Context;
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;

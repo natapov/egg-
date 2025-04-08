@@ -4,9 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-
 import androidx.preference.PreferenceManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
